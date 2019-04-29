@@ -1,0 +1,101 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'addDataDialog_3.ui'
+#
+# Created by: PyQt5 UI code generator 5.12
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
+class Ui_addDataDialog_3(object):
+    def setupUi(self, addDataDialog_3):
+        addDataDialog_3.setObjectName("addDataDialog_3")
+        addDataDialog_3.resize(692, 527)
+        self.buttonBox = QtWidgets.QDialogButtonBox(addDataDialog_3)
+        self.buttonBox.setGeometry(QtCore.QRect(130, 460, 341, 32))
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.widget = QtWidgets.QWidget(addDataDialog_3)
+        self.widget.setGeometry(QtCore.QRect(71, 31, 551, 401))
+        self.widget.setObjectName("widget")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.widget)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.label = QtWidgets.QLabel(self.widget)
+        self.label.setMinimumSize(QtCore.QSize(162, 0))
+        self.label.setMaximumSize(QtCore.QSize(162, 16777215))
+        self.label.setObjectName("label")
+        self.horizontalLayout.addWidget(self.label)
+        self.lineEdit = QtWidgets.QLineEdit(self.widget)
+        self.lineEdit.setObjectName("lineEdit")
+        self.horizontalLayout.addWidget(self.lineEdit)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_2 = QtWidgets.QLabel(self.widget)
+        self.label_2.setMinimumSize(QtCore.QSize(162, 0))
+        self.label_2.setMaximumSize(QtCore.QSize(162, 16777215))
+        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_2.addWidget(self.label_2)
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.widget)
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.horizontalLayout_2.addWidget(self.lineEdit_2)
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label_3 = QtWidgets.QLabel(self.widget)
+        self.label_3.setMinimumSize(QtCore.QSize(162, 0))
+        self.label_3.setMaximumSize(QtCore.QSize(162, 16777215))
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_3.addWidget(self.label_3)
+        self.lineEdit_3 = QtWidgets.QLineEdit(self.widget)
+        self.lineEdit_3.setObjectName("lineEdit_3")
+        self.horizontalLayout_3.addWidget(self.lineEdit_3)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.label_4 = QtWidgets.QLabel(self.widget)
+        self.label_4.setMinimumSize(QtCore.QSize(162, 0))
+        self.label_4.setMaximumSize(QtCore.QSize(162, 16777215))
+        self.label_4.setObjectName("label_4")
+        self.horizontalLayout_4.addWidget(self.label_4)
+        self.lineEdit_4 = QtWidgets.QLineEdit(self.widget)
+        self.lineEdit_4.setObjectName("lineEdit_4")
+        self.horizontalLayout_4.addWidget(self.lineEdit_4)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.label_5 = QtWidgets.QLabel(self.widget)
+        self.label_5.setMinimumSize(QtCore.QSize(162, 0))
+        self.label_5.setMaximumSize(QtCore.QSize(162, 16777215))
+        self.label_5.setObjectName("label_5")
+        self.horizontalLayout_5.addWidget(self.label_5)
+        self.comboBox = QtWidgets.QComboBox(self.widget)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.horizontalLayout_5.addWidget(self.comboBox)
+        self.verticalLayout.addLayout(self.horizontalLayout_5)
+
+        self.retranslateUi(addDataDialog_3)
+        self.buttonBox.accepted.connect(addDataDialog_3.accept)
+        self.buttonBox.rejected.connect(addDataDialog_3.reject)
+        QtCore.QMetaObject.connectSlotsByName(addDataDialog_3)
+
+    def retranslateUi(self, addDataDialog_3):
+        _translate = QtCore.QCoreApplication.translate
+        addDataDialog_3.setWindowTitle(_translate("addDataDialog_3", "添加故障记录"))
+        self.label.setText(_translate("addDataDialog_3", "故障模式："))
+        self.label_2.setText(_translate("addDataDialog_3", "故障部位："))
+        self.label_3.setText(_translate("addDataDialog_3", "故障原因："))
+        self.label_4.setText(_translate("addDataDialog_3", "故障溯源："))
+        self.label_5.setText(_translate("addDataDialog_3", "整机/子系统："))
+        self.comboBox.setItemText(0, _translate("addDataDialog_3", "整机"))
+        self.comboBox.setItemText(1, _translate("addDataDialog_3", "子系统"))
+
+
