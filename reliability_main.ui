@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1111</width>
-    <height>833</height>
+    <width>1204</width>
+    <height>875</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,323 +37,409 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1083</width>
-         <height>746</height>
+         <width>1176</width>
+         <height>788</height>
         </rect>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_17">
+       <layout class="QHBoxLayout" name="horizontalLayout_24">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <layout class="QHBoxLayout" name="horizontalLayout_23">
           <item>
-           <widget class="QComboBox" name="devComboBox">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <property name="text">
-              <string>选择设备</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item>
-           <widget class="QListWidget" name="listWidget">
-            <property name="minimumSize">
-             <size>
-              <width>150</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>200</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <item>
-             <property name="text">
-              <string>可靠性分析</string>
-             </property>
-             <property name="font">
-              <font>
-               <family>Adobe Devanagari</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-               <underline>false</underline>
-               <kerning>true</kerning>
-              </font>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>维修性分析</string>
-             </property>
-             <property name="font">
-              <font>
-               <family>Adobe Devanagari</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>故障分析</string>
-             </property>
-             <property name="font">
-              <font>
-               <family>Adobe Devanagari</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item>
-           <widget class="QListWidget" name="devWidget">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>200</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <item>
-             <property name="text">
-              <string>设备信息</string>
-             </property>
-             <property name="font">
-              <font>
-               <family>Adobe Devanagari</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="textAlignment">
-              <set>AlignCenter</set>
-             </property>
-             <property name="flags">
-              <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>设备编号：</string>
-             </property>
-             <property name="flags">
-              <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string/>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>设备型号：</string>
-             </property>
-             <property name="flags">
-              <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string/>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>设备名称：</string>
-             </property>
-             <property name="flags">
-              <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string/>
-             </property>
-            </item>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QStackedWidget" name="stackedWidget">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <widget class="QWidget" name="reliaPage">
-           <layout class="QHBoxLayout" name="horizontalLayout_19">
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_8">
+             <widget class="QListWidget" name="listWidget">
+              <property name="minimumSize">
+               <size>
+                <width>150</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>200</width>
+                <height>16777215</height>
+               </size>
+              </property>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_18">
+               <property name="text">
+                <string>可靠性分析</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Adobe Devanagari</family>
+                 <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                 <underline>false</underline>
+                 <kerning>true</kerning>
+                </font>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>维修性分析</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Adobe Devanagari</family>
+                 <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>故障分析</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Adobe Devanagari</family>
+                 <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="manaDevButton">
+              <property name="text">
+               <string>管理设备</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="devComboBox">
+              <item>
+               <property name="text">
+                <string>选择设备</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QListWidget" name="devWidget">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>200</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <item>
+               <property name="text">
+                <string>设备1信息</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Microsoft YaHei UI</family>
+                 <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备编号：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备型号：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备名称：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="devComboBox_2">
+              <item>
+               <property name="text">
+                <string>选择设备</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QListWidget" name="devWidget_2">
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>200</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <item>
+               <property name="text">
+                <string>设备2信息</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Microsoft YaHei UI</family>
+                 <pointsize>12</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备编号：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备型号：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>设备名称：</string>
+               </property>
+               <property name="flags">
+                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string/>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QStackedWidget" name="stackedWidget">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="reliaPage">
+             <layout class="QVBoxLayout" name="verticalLayout_12">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout">
+                 <layout class="QHBoxLayout" name="horizontalLayout_19">
                   <item>
-                   <widget class="QLabel" name="label_3">
-                    <property name="text">
-                     <string>故障判断标准：</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <layout class="QVBoxLayout" name="verticalLayout">
                     <item>
-                     <widget class="QLabel" name="label_4">
-                      <property name="minimumSize">
-                       <size>
-                        <width>60</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>60</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
+                     <widget class="QLabel" name="label_3">
                       <property name="text">
-                       <string>温差：</string>
+                       <string>故障判断标准：</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="tempEdit">
-                      <property name="minimumSize">
-                       <size>
-                        <width>100</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>210</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                     </widget>
+                     <layout class="QHBoxLayout" name="horizontalLayout_5">
+                      <item>
+                       <widget class="QLabel" name="label_4">
+                        <property name="minimumSize">
+                         <size>
+                          <width>60</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>60</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                        <property name="text">
+                         <string>温差：</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="tempEdit">
+                        <property name="minimumSize">
+                         <size>
+                          <width>100</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>210</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="label_5">
+                        <property name="text">
+                         <string>℃</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
                     <item>
-                     <widget class="QLabel" name="label_5">
-                      <property name="text">
-                       <string>℃</string>
-                      </property>
-                     </widget>
+                     <layout class="QHBoxLayout" name="horizontalLayout_12">
+                      <item>
+                       <widget class="QLabel" name="label_6">
+                        <property name="minimumSize">
+                         <size>
+                          <width>60</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>60</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                        <property name="text">
+                         <string>精度：</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="precEdit">
+                        <property name="minimumSize">
+                         <size>
+                          <width>100</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>210</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="label_7">
+                        <property name="text">
+                         <string>μm</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
                    </layout>
                   </item>
                   <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_12">
-                    <item>
-                     <widget class="QLabel" name="label_6">
-                      <property name="minimumSize">
-                       <size>
-                        <width>60</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>60</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
+                   <layout class="QGridLayout" name="gridLayout">
+                    <item row="0" column="0">
+                     <widget class="QPushButton" name="outputDataButton">
                       <property name="text">
-                       <string>精度：</string>
+                       <string>导出数据</string>
                       </property>
                      </widget>
                     </item>
-                    <item>
-                     <widget class="QLineEdit" name="precEdit">
-                      <property name="minimumSize">
-                       <size>
-                        <width>100</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>210</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_7">
+                    <item row="0" column="1" colspan="2">
+                     <widget class="QPushButton" name="loadButton">
                       <property name="text">
-                       <string>μm</string>
+                       <string>导入数据</string>
                       </property>
                      </widget>
                     </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_10">
-                    <item>
-                     <widget class="QLabel" name="label_10">
-                      <property name="minimumSize">
-                       <size>
-                        <width>90</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>90</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
+                    <item row="0" column="3" colspan="2">
+                     <widget class="QPushButton" name="manaRecButton">
                       <property name="text">
-                       <string>选择轴向：</string>
+                       <string>管理记录</string>
                       </property>
                      </widget>
                     </item>
-                    <item>
-                     <widget class="QComboBox" name="axisComboBox">
-                      <property name="minimumSize">
-                       <size>
-                        <width>150</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>190</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <item>
-                       <property name="text">
-                        <string>X</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Y</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Z</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_11">
+                    <item row="0" column="5">
+                     <widget class="QPushButton" name="saveButton">
                       <property name="text">
-                       <string>轴</string>
+                       <string>保存结果</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="0" colspan="2">
+                     <widget class="QPushButton" name="rawDataButton">
+                      <property name="text">
+                       <string>原始数据可视化</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="2" colspan="2">
+                     <widget class="QPushButton" name="scatterButton">
+                      <property name="text">
+                       <string>故障时间散点图</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="4" colspan="2">
+                     <widget class="QPushButton" name="reliaButton">
+                      <property name="text">
+                       <string>可靠性分析</string>
                       </property>
                      </widget>
                     </item>
@@ -362,832 +448,1483 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QGridLayout" name="gridLayout">
-                  <item row="0" column="0">
-                   <widget class="QPushButton" name="addDataButton">
+                 <widget class="QStackedWidget" name="reliaWidget">
+                  <property name="currentIndex">
+                   <number>0</number>
+                  </property>
+                  <widget class="QWidget" name="rawPage">
+                   <layout class="QHBoxLayout" name="horizontalLayout_18">
+                    <item>
+                     <layout class="QVBoxLayout" name="verticalLayout_8">
+                      <item>
+                       <layout class="QHBoxLayout" name="horizontalLayout_17">
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout_3">
+                          <item>
+                           <widget class="QLabel" name="label_10">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>16777215</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>选择轴向：</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QComboBox" name="axisComboBox">
+                            <property name="minimumSize">
+                             <size>
+                              <width>0</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>16777215</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <item>
+                             <property name="text">
+                              <string>X</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>Y</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>Z</string>
+                             </property>
+                            </item>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QLabel" name="label_11">
+                            <property name="text">
+                             <string>轴</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </item>
+                        <item>
+                         <spacer name="horizontalSpacer">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>400</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </item>
+                      <item>
+                       <layout class="QGridLayout" name="gridLayout_3">
+                        <item row="0" column="0">
+                         <widget class="QGraphicsView" name="tempView_1"/>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QGraphicsView" name="tempView_2"/>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QGraphicsView" name="rpaView"/>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QGraphicsView" name="straView"/>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="scatterPage">
+                   <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <item>
+                     <widget class="QGraphicsView" name="scatterView"/>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="resultPage">
+                   <layout class="QVBoxLayout" name="verticalLayout_14">
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_21">
+                      <item>
+                       <layout class="QVBoxLayout" name="verticalLayout_11">
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout">
+                          <item>
+                           <widget class="QLabel" name="label">
+                            <property name="text">
+                             <string>选择算法：</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QComboBox" name="comboBox">
+                            <item>
+                             <property name="text">
+                              <string>最小二乘法</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>极大后验估计法</string>
+                             </property>
+                            </item>
+                           </widget>
+                          </item>
+                          <item>
+                           <spacer name="horizontalSpacer_2">
+                            <property name="orientation">
+                             <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                             <size>
+                              <width>198</width>
+                              <height>20</height>
+                             </size>
+                            </property>
+                           </spacer>
+                          </item>
+                         </layout>
+                        </item>
+                        <item>
+                         <layout class="QGridLayout" name="gridLayout_2">
+                          <item row="1" column="0">
+                           <widget class="QGraphicsView" name="reliaView"/>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QGraphicsView" name="cdfView"/>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QGraphicsView" name="failView"/>
+                          </item>
+                          <item row="0" column="0">
+                           <widget class="QGraphicsView" name="pdfView"/>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </item>
+                      <item>
+                       <layout class="QVBoxLayout" name="verticalLayout_10">
+                        <item>
+                         <widget class="QPushButton" name="nextResultButton">
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>下一页</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QStackedWidget" name="reliaResultWidget">
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="currentIndex">
+                           <number>0</number>
+                          </property>
+                          <widget class="QWidget" name="dev1Page">
+                           <layout class="QHBoxLayout" name="horizontalLayout_8">
+                            <item>
+                             <widget class="QListWidget" name="dev1ResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>设备1分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>尺度参数λ：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>形状参数β：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTBF：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>当前时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>概率分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>累积分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>可靠度：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="dev2Page">
+                           <layout class="QHBoxLayout" name="horizontalLayout_10">
+                            <item>
+                             <widget class="QListWidget" name="dev2ResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>设备2分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>尺度参数λ：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>形状参数β：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTBF：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>当前时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>概率分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>累积分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>可靠度：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="cmpPage">
+                           <layout class="QHBoxLayout" name="horizontalLayout_20">
+                            <item>
+                             <widget class="QListWidget" name="cmpResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>比较分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>当前时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>可靠度：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTBF：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+             <zorder>manaRecButton</zorder>
+             <zorder>pushButton</zorder>
+             <zorder>label_3</zorder>
+             <zorder></zorder>
+             <zorder>layoutWidget</zorder>
+             <zorder></zorder>
+            </widget>
+            <widget class="QWidget" name="page">
+             <layout class="QHBoxLayout" name="horizontalLayout_22">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_19">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_4">
+                  <item>
+                   <widget class="QPushButton" name="manaMtRecButton">
                     <property name="text">
-                     <string>添加记录</string>
+                     <string>管理记录</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="1" colspan="2">
-                   <widget class="QPushButton" name="loadButton">
+                  <item>
+                   <widget class="QPushButton" name="loadButton_2">
                     <property name="text">
                      <string>导入数据</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="3" colspan="2">
-                   <widget class="QPushButton" name="outputDataButton">
+                  <item>
+                   <widget class="QPushButton" name="outputDataButton_2">
                     <property name="text">
                      <string>导出数据</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="5">
-                   <widget class="QPushButton" name="saveButton">
+                  <item>
+                   <widget class="QPushButton" name="scatterButton_2">
+                    <property name="text">
+                     <string>维修时间散点图</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="reliaButton_2">
+                    <property name="text">
+                     <string>维修性分析</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="saveButton_2">
                     <property name="text">
                      <string>保存结果</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="0" colspan="2">
-                   <widget class="QPushButton" name="rawDataButton">
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QStackedWidget" name="maintainWidget">
+                  <property name="currentIndex">
+                   <number>0</number>
+                  </property>
+                  <widget class="QWidget" name="page_3">
+                   <layout class="QHBoxLayout" name="horizontalLayout_9">
+                    <item>
+                     <widget class="QGraphicsView" name="scatterView_2"/>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="page_4">
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_15">
+                      <item>
+                       <layout class="QVBoxLayout" name="verticalLayout_17">
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout_11">
+                          <item>
+                           <layout class="QHBoxLayout" name="horizontalLayout_6">
+                            <item>
+                             <widget class="QLabel" name="label_2">
+                              <property name="text">
+                               <string>选择算法：</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QComboBox" name="comboBox_2">
+                              <item>
+                               <property name="text">
+                                <string>最小二乘法</string>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>极大后验估计法</string>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </item>
+                          <item>
+                           <spacer name="horizontalSpacer_7">
+                            <property name="orientation">
+                             <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                             <size>
+                              <width>248</width>
+                              <height>20</height>
+                             </size>
+                            </property>
+                           </spacer>
+                          </item>
+                         </layout>
+                        </item>
+                        <item>
+                         <layout class="QGridLayout" name="gridLayout_5">
+                          <item row="0" column="0">
+                           <widget class="QGraphicsView" name="pdfView_2"/>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QGraphicsView" name="cdfView_2"/>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QGraphicsView" name="reliaView_2"/>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QGraphicsView" name="failView_2"/>
+                          </item>
+                         </layout>
+                        </item>
+                       </layout>
+                      </item>
+                      <item>
+                       <layout class="QVBoxLayout" name="verticalLayout_16">
+                        <item>
+                         <widget class="QPushButton" name="nextMtResultButton">
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="text">
+                           <string>下一页</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QStackedWidget" name="mtResultWidget">
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <property name="currentIndex">
+                           <number>0</number>
+                          </property>
+                          <widget class="QWidget" name="dev1MtPage">
+                           <layout class="QVBoxLayout" name="verticalLayout_4">
+                            <item>
+                             <widget class="QListWidget" name="dev1MtResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>设备1分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <family>Microsoft YaHei UI</family>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>尺度参数λ：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>形状参数β：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTTR：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>维修时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>概率分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>累积分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>修复率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="dev2MtPage">
+                           <layout class="QVBoxLayout" name="verticalLayout_13">
+                            <item>
+                             <widget class="QListWidget" name="dev2MtResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>设备2分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <family>Microsoft YaHei UI</family>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>尺度参数λ：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>形状参数β：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTTR：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>维修时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>概率分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>累积分布值：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>修复率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                          <widget class="QWidget" name="cmpMtPage">
+                           <layout class="QVBoxLayout" name="verticalLayout_15">
+                            <item>
+                             <widget class="QListWidget" name="cmpMtResultWidget">
+                              <property name="minimumSize">
+                               <size>
+                                <width>150</width>
+                                <height>0</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>200</width>
+                                <height>16777215</height>
+                               </size>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>比较分析结果</string>
+                               </property>
+                               <property name="font">
+                                <font>
+                                 <pointsize>12</pointsize>
+                                 <weight>75</weight>
+                                 <bold>true</bold>
+                                </font>
+                               </property>
+                               <property name="textAlignment">
+                                <set>AlignCenter</set>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>当前时间/h：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>修复率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>失效率：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>MTTR：</string>
+                               </property>
+                               <property name="flags">
+                                <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="page_2">
+             <layout class="QHBoxLayout" name="horizontalLayout_16">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_7">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_7">
+                  <item>
+                   <widget class="QPushButton" name="addDataButton_3">
                     <property name="text">
-                     <string>原始数据可视化</string>
+                     <string>添加记录</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="2" colspan="2">
-                   <widget class="QPushButton" name="scatterButton">
+                  <item>
+                   <widget class="QPushButton" name="loadButton_3">
                     <property name="text">
-                     <string>故障时间散点图</string>
+                     <string>导入数据</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="4" colspan="2">
-                   <widget class="QPushButton" name="reliaButton">
+                  <item>
+                   <widget class="QPushButton" name="outputDataButton_3">
                     <property name="text">
-                     <string>可靠性分析</string>
+                     <string>导出数据</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="wholeButton">
+                    <property name="text">
+                     <string>整机分析</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="subSysButton">
+                    <property name="text">
+                     <string>子系统分析</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="saveButton_3">
+                    <property name="text">
+                     <string>保存结果</string>
                     </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QStackedWidget" name="reliaWidget">
-                <property name="currentIndex">
-                 <number>0</number>
-                </property>
-                <widget class="QWidget" name="rawPage">
-                 <layout class="QHBoxLayout" name="horizontalLayout_3">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_8">
+                <item>
+                 <widget class="QStackedWidget" name="faultWidget">
+                  <property name="currentIndex">
+                   <number>0</number>
+                  </property>
+                  <widget class="QWidget" name="page_5">
+                   <layout class="QGridLayout" name="gridLayout_7">
                     <item row="0" column="0">
-                     <widget class="QGraphicsView" name="tempView_1"/>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QGraphicsView" name="tempView_2"/>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QGraphicsView" name="straView"/>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QGraphicsView" name="rpaView"/>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="scatterPage">
-                 <layout class="QHBoxLayout" name="horizontalLayout_2">
-                  <item>
-                   <widget class="QGraphicsView" name="scatterView"/>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="resultPage">
-                 <layout class="QHBoxLayout" name="horizontalLayout">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_2">
-                    <item row="2" column="0">
-                     <widget class="QGraphicsView" name="reliaView"/>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QGraphicsView" name="pdfView"/>
-                    </item>
-                    <item row="0" column="0" colspan="2">
-                     <layout class="QHBoxLayout" name="horizontalLayout_8">
+                     <layout class="QVBoxLayout" name="verticalLayout_5">
                       <item>
-                       <widget class="QLabel" name="label">
-                        <property name="text">
-                         <string>             选择算法：</string>
-                        </property>
-                       </widget>
+                       <layout class="QHBoxLayout" name="horizontalLayout_13">
+                        <item>
+                         <spacer name="horizontalSpacer_3">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>258</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_8">
+                          <property name="font">
+                           <font>
+                            <family>Adobe Devanagari</family>
+                            <pointsize>12</pointsize>
+                            <weight>75</weight>
+                            <bold>true</bold>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>整机分析</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="horizontalSpacer_4">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>258</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
                       </item>
                       <item>
-                       <widget class="QComboBox" name="comboBox">
-                        <item>
-                         <property name="text">
-                          <string>最小二乘法</string>
-                         </property>
+                       <layout class="QGridLayout" name="gridLayout_4">
+                        <item row="0" column="0">
+                         <widget class="QGraphicsView" name="pattView"/>
                         </item>
-                        <item>
-                         <property name="text">
-                          <string>极大后验估计法</string>
-                         </property>
+                        <item row="0" column="1">
+                         <widget class="QGraphicsView" name="posiView"/>
                         </item>
-                       </widget>
+                        <item row="0" column="2" rowspan="2">
+                         <widget class="QListWidget" name="resultWidget_3">
+                          <property name="minimumSize">
+                           <size>
+                            <width>150</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <item>
+                           <property name="text">
+                            <string>故障模式：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障部位：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障原因：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障溯源：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QGraphicsView" name="reasonView"/>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QGraphicsView" name="rootView"/>
+                        </item>
+                       </layout>
                       </item>
                      </layout>
                     </item>
-                    <item row="1" column="1">
-                     <widget class="QGraphicsView" name="cdfView"/>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QGraphicsView" name="failView"/>
-                    </item>
-                    <item row="0" column="2" rowspan="3">
-                     <widget class="QListWidget" name="resultWidget">
-                      <property name="minimumSize">
-                       <size>
-                        <width>150</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>200</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="page_6">
+                   <layout class="QGridLayout" name="gridLayout_9">
+                    <item row="0" column="0">
+                     <layout class="QVBoxLayout" name="verticalLayout_6">
                       <item>
-                       <property name="text">
-                        <string>尺度参数λ：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_14">
+                        <item>
+                         <spacer name="horizontalSpacer_5">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>258</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="label_9">
+                          <property name="font">
+                           <font>
+                            <family>Adobe Devanagari</family>
+                            <pointsize>12</pointsize>
+                            <weight>75</weight>
+                            <bold>true</bold>
+                           </font>
+                          </property>
+                          <property name="text">
+                           <string>子系统分析</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="horizontalSpacer_6">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>258</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
                       </item>
                       <item>
-                       <property name="text">
-                        <string/>
-                       </property>
+                       <layout class="QGridLayout" name="gridLayout_6">
+                        <item row="0" column="0">
+                         <widget class="QGraphicsView" name="pattView_2"/>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QGraphicsView" name="posiView_2"/>
+                        </item>
+                        <item row="0" column="2" rowspan="2">
+                         <widget class="QListWidget" name="resultWidget_4">
+                          <property name="minimumSize">
+                           <size>
+                            <width>150</width>
+                            <height>0</height>
+                           </size>
+                          </property>
+                          <property name="maximumSize">
+                           <size>
+                            <width>200</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                          <item>
+                           <property name="text">
+                            <string>故障模式：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障部位：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障原因：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string>故障溯源：</string>
+                           </property>
+                           <property name="flags">
+                            <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
+                           </property>
+                          </item>
+                          <item>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </item>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QGraphicsView" name="reasonView_2"/>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QGraphicsView" name="rootView_2"/>
+                        </item>
+                       </layout>
                       </item>
-                      <item>
-                       <property name="text">
-                        <string>形状参数β：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>MTBF：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>当前时间/h：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>概率分布值：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>累积分布值：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>可靠度：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>失效率：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                     </widget>
+                     </layout>
                     </item>
                    </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="page">
-           <layout class="QHBoxLayout" name="horizontalLayout_15">
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_4">
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
-                <item>
-                 <widget class="QPushButton" name="addDataButton_2">
-                  <property name="text">
-                   <string>添加记录</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="loadButton_2">
-                  <property name="text">
-                   <string>导入数据</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="outputDataButton_2">
-                  <property name="text">
-                   <string>导出数据</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="scatterButton_2">
-                  <property name="text">
-                   <string>维修时间散点图</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="reliaButton_2">
-                  <property name="text">
-                   <string>维修性分析</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="saveButton_2">
-                  <property name="text">
-                   <string>保存结果</string>
-                  </property>
+                  </widget>
                  </widget>
                 </item>
                </layout>
               </item>
-              <item>
-               <widget class="QStackedWidget" name="maintainWidget">
-                <property name="currentIndex">
-                 <number>0</number>
-                </property>
-                <widget class="QWidget" name="page_3">
-                 <layout class="QHBoxLayout" name="horizontalLayout_9">
-                  <item>
-                   <widget class="QGraphicsView" name="scatterView_2"/>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="page_4">
-                 <layout class="QHBoxLayout" name="horizontalLayout_6">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_5">
-                    <item row="2" column="0">
-                     <widget class="QGraphicsView" name="reliaView_2"/>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QGraphicsView" name="pdfView_2"/>
-                    </item>
-                    <item row="0" column="0" colspan="2">
-                     <layout class="QHBoxLayout" name="horizontalLayout_11">
-                      <item>
-                       <widget class="QLabel" name="label_2">
-                        <property name="text">
-                         <string>             选择算法：</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QComboBox" name="comboBox_2">
-                        <item>
-                         <property name="text">
-                          <string>最小二乘法</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>极大后验估计法</string>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QGraphicsView" name="cdfView_2"/>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QGraphicsView" name="failView_2"/>
-                    </item>
-                    <item row="0" column="2" rowspan="3">
-                     <widget class="QListWidget" name="resultWidget_2">
-                      <property name="minimumSize">
-                       <size>
-                        <width>150</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>200</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <item>
-                       <property name="text">
-                        <string>尺度参数λ：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>形状参数β：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>MTTR：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>维修时间/h：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>概率分布值：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>累积分布值：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>维修度：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>维修率：</string>
-                       </property>
-                       <property name="flags">
-                        <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
              </layout>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="page_2">
-           <layout class="QHBoxLayout" name="horizontalLayout_16">
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_7">
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_7">
-                <item>
-                 <widget class="QPushButton" name="addDataButton_3">
-                  <property name="text">
-                   <string>添加记录</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="loadButton_3">
-                  <property name="text">
-                   <string>导入数据</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="outputDataButton_3">
-                  <property name="text">
-                   <string>导出数据</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="wholeButton">
-                  <property name="text">
-                   <string>整机分析</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="subSysButton">
-                  <property name="text">
-                   <string>子系统分析</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="saveButton_3">
-                  <property name="text">
-                   <string>保存结果</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QStackedWidget" name="faultWidget">
-                <property name="currentIndex">
-                 <number>0</number>
-                </property>
-                <widget class="QWidget" name="page_5">
-                 <layout class="QGridLayout" name="gridLayout_7">
-                  <item row="0" column="0">
-                   <layout class="QVBoxLayout" name="verticalLayout_5">
-                    <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_13">
-                      <item>
-                       <spacer name="horizontalSpacer_3">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>258</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="label_8">
-                        <property name="font">
-                         <font>
-                          <family>Adobe Devanagari</family>
-                          <pointsize>12</pointsize>
-                          <weight>75</weight>
-                          <bold>true</bold>
-                         </font>
-                        </property>
-                        <property name="text">
-                         <string>整机分析</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <spacer name="horizontalSpacer_4">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>258</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                     </layout>
-                    </item>
-                    <item>
-                     <layout class="QGridLayout" name="gridLayout_4">
-                      <item row="0" column="0">
-                       <widget class="QGraphicsView" name="pattView"/>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QGraphicsView" name="posiView"/>
-                      </item>
-                      <item row="0" column="2" rowspan="2">
-                       <widget class="QListWidget" name="resultWidget_3">
-                        <property name="minimumSize">
-                         <size>
-                          <width>150</width>
-                          <height>0</height>
-                         </size>
-                        </property>
-                        <property name="maximumSize">
-                         <size>
-                          <width>200</width>
-                          <height>16777215</height>
-                         </size>
-                        </property>
-                        <item>
-                         <property name="text">
-                          <string>故障模式：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障部位：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障原因：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障溯源：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QGraphicsView" name="reasonView"/>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QGraphicsView" name="rootView"/>
-                      </item>
-                     </layout>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="page_6">
-                 <layout class="QGridLayout" name="gridLayout_9">
-                  <item row="0" column="0">
-                   <layout class="QVBoxLayout" name="verticalLayout_6">
-                    <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_14">
-                      <item>
-                       <spacer name="horizontalSpacer_5">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>258</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="label_9">
-                        <property name="font">
-                         <font>
-                          <family>Adobe Devanagari</family>
-                          <pointsize>12</pointsize>
-                          <weight>75</weight>
-                          <bold>true</bold>
-                         </font>
-                        </property>
-                        <property name="text">
-                         <string>子系统分析</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <spacer name="horizontalSpacer_6">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>258</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                     </layout>
-                    </item>
-                    <item>
-                     <layout class="QGridLayout" name="gridLayout_6">
-                      <item row="0" column="0">
-                       <widget class="QGraphicsView" name="pattView_2"/>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QGraphicsView" name="posiView_2"/>
-                      </item>
-                      <item row="0" column="2" rowspan="2">
-                       <widget class="QListWidget" name="resultWidget_4">
-                        <property name="minimumSize">
-                         <size>
-                          <width>150</width>
-                          <height>0</height>
-                         </size>
-                        </property>
-                        <property name="maximumSize">
-                         <size>
-                          <width>200</width>
-                          <height>16777215</height>
-                         </size>
-                        </property>
-                        <item>
-                         <property name="text">
-                          <string>故障模式：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障部位：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障原因：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>故障溯源：</string>
-                         </property>
-                         <property name="flags">
-                          <set>ItemIsDragEnabled|ItemIsUserCheckable</set>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QGraphicsView" name="reasonView_2"/>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QGraphicsView" name="rootView_2"/>
-                      </item>
-                     </layout>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-         </widget>
+            </widget>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -1200,7 +1937,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1111</width>
+     <width>1204</width>
      <height>30</height>
     </rect>
    </property>

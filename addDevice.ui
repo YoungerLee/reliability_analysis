@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>addDataDialog_2</class>
- <widget class="QDialog" name="addDataDialog_2">
+ <class>addDevDialog</class>
+ <widget class="QDialog" name="addDevDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>692</width>
-    <height>527</height>
+    <width>379</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>添加维修记录</string>
+   <string>添加设备</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -20,20 +20,8 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QLabel" name="label">
-         <property name="minimumSize">
-          <size>
-           <width>162</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>162</width>
-           <height>16777215</height>
-          </size>
-         </property>
          <property name="text">
-          <string>维修日期：</string>
+          <string>设备名称：</string>
          </property>
         </widget>
        </item>
@@ -46,51 +34,13 @@
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QLabel" name="label_2">
-         <property name="minimumSize">
-          <size>
-           <width>162</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>162</width>
-           <height>16777215</height>
-          </size>
-         </property>
          <property name="text">
-          <string>维修人员：</string>
+          <string>设备型号：</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QLineEdit" name="lineEdit_2"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="minimumSize">
-          <size>
-           <width>162</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>162</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>维修时间：</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="lineEdit_3"/>
        </item>
       </layout>
      </item>
@@ -113,7 +63,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>addDataDialog_2</receiver>
+   <receiver>addDevDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -129,7 +79,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>addDataDialog_2</receiver>
+   <receiver>addDevDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

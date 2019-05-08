@@ -1,6 +1,7 @@
 from Ui_addDataDialog_1 import Ui_addDataDialog
 from Ui_addDataDialog_2 import Ui_addDataDialog_2
 from Ui_addDataDialog_3 import Ui_addDataDialog_3
+from Ui_addDevice import Ui_addDevDialog
 from PyQt5.QtWidgets import QDialog, QMessageBox
 class AddDataDialog_1(QDialog):
     def __init__(self, parent=None):
@@ -163,3 +164,38 @@ class AddDataDialog_3(QDialog):
         else:
             idx = 0
         return idx
+
+class AddDevDialog(QDialog):
+    def __init__(self, parent=None):
+        super(AddDevDialog, self).__init__(parent)
+        self.ui = Ui_addDevDialog()
+        self.ui.setupUi(self)
+        self.ui.buttonBox.accepted.connect(self.acceptEvent)
+        self.ui.buttonBox.rejected.connect(self.rejectEvent)
+
+    def acceptEvent(self):
+        if self.ui.lineEdit.text().strip(' ') == '':
+            msg_box = QMessageBox(QMessageBox.Information,
+                                  '提示',
+                                  '请填写设备名称',
+                                  QMessageBox.Ok)
+            msg_box.exec_()
+            self.reject()
+        elif self.ui.lineEdit_2.text().strip(' ') == '':
+            msg_box = QMessageBox(QMessageBox.Information,
+                                  '提示',
+                                  '请填写设备型号',
+                                  QMessageBox.Ok)
+            msg_box.exec_()
+            self.reject()
+        else:
+            self.accept()
+
+    def rejectEvent(self):
+        self.reject()
+
+    def get_name(self):
+        return self.ui.lineEdit.text()
+
+    def get_num(self):
+        return self.ui.lineEdit_2.text()

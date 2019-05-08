@@ -1,25 +1,25 @@
 from reliability_analysis.function import *
 import numpy as np
 from scipy.optimize import minimize
+from functools import partial
 
-def map_estimate(x0):
+def map_estimate(x0, t, mu, sigma):
     '''
     使用极大后验估计法估计威布尔分布的参数
-    :param x0: 优化初始值，带入最小二乘法的结果
+    :param x0:优化初始值，代入最小二乘法的结果
+    :param t:故障时间间隔
+    :param mu:先验高斯分布均值
+    :param sigma:先验高斯分布标准差
+    :return:
+    '''
+    '''
+    使用极大后验估计法估计威布尔分布的参数
+    :param x0: 优化初始值，代入最小二乘法的结果
     :return: 优化后的参数
     '''
     x0 = np.array(x0)
-    res = minimize(posterior_function, x0, method='Nelder-Mead', tol=1e-7)
-    return res.x
-
-def map_estimate_2(x0):
-    '''
-    使用极大后验估计法估计威布尔分布的参数
-    :param x0: 优化初始值，带入最小二乘法的结果
-    :return: 优化后的参数
-    '''
-    x0 = np.array(x0)
-    res = minimize(posterior_function_2, x0, method='Nelder-Mead', tol=1e-7)
+    binded = partial(posterior_function, t=t, mu=mu, sigma=sigma)
+    res = minimize(binded, x0, method='Nelder-Mead', tol=1e-7)
     return res.x
 
 def least_square(t):
@@ -48,4 +48,7 @@ def least_square(t):
 
 
 if __name__ == "__main__":
-    print(map_estimate([532.94338156,1.73033109]))
+    t = [10, 20, 30, 40, 50]
+    lambda_hat, beta_hat, beta_std = least_square(t)
+    print(lambda_hat, beta_hat)
+    print(map_estimate([lambda_hat, beta_hat], t, beta_hat, beta_std))

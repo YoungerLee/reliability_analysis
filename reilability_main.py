@@ -1,5 +1,5 @@
 from Ui_reliability_main import Ui_MainWindow
-from add_data_dialog import AddDataDialog_1, AddDataDialog_2, AddDataDialog_3
+from table_list import *
 import reliability_analysis.function as rf
 import reliability_analysis.estimate as estimate
 from PyQt5.QtCore import pyqtSlot, Qt
@@ -13,24 +13,28 @@ from enum import Enum, unique
 from openpyxl import Workbook
 import re
 import os
+
+
 @unique
 class Result(Enum):
-    lamda = 0
-    lamda_value = 1
-    beta = 2
-    beta_value = 3
-    mtbf = 4
-    mtbf_value = 5
-    curr_time = 6
-    curr_time_value = 7
-    pdf = 8
-    pdf_value = 9
-    cdf = 10
-    cdf_value = 11
-    relia = 12
-    relia_value = 13
-    fali = 14
-    fali_value = 15
+    lamda = 1
+    lamda_value = 2
+    beta = 3
+    beta_value = 4
+    mtbf = 5
+    mtbf_value = 6
+    curr_time = 7
+    curr_time_value = 8
+    pdf = 9
+    pdf_value = 10
+    cdf = 11
+    cdf_value = 12
+    relia = 13
+    relia_value = 14
+    fali = 15
+    fali_value = 16
+
+
 @unique
 class Fault(Enum):
     pattern = 0
@@ -41,8 +45,12 @@ class Fault(Enum):
     reason_value = 5
     root = 6
     root_value = 7
-[RUN_TIME, ENV_TEMP, KNI_TEMP, RPA] = [0, 1, 2, 3]
-[PATT, POSI, REASON, ROOT] = [0, 1, 2, 3]
+
+
+[RUN_TIME, ENV_TEMP, KNI_TEMP, RPA] = range(4)
+[PATT, POSI, REASON, ROOT] = range(4)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -61,7 +69,8 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.itemClicked.connect(self.on_listWidget_itemClicked)
         self.ui.comboBox.currentIndexChanged.connect(self.on_comboBox_currentIndexChanged)
         self.ui.devComboBox.currentIndexChanged.connect(self.on_devComboBox_currentIndexChanged)
-        # self.ui.axisComboBox.currentIndexChanged.connect(self.on_axisComboBox_currentIndexChanged)
+        self.ui.devComboBox_2.currentIndexChanged.connect(self.on_devComboBox_2_currentIndexChanged)
+        self.ui.axisComboBox.currentIndexChanged.connect(self.on_axisComboBox_currentIndexChanged)
         self.initScatterCharts()
         self.initLinePlot()
         self.initBarPlot()
@@ -71,7 +80,7 @@ class MainWindow(QMainWindow):
 
     def initDataBase(self):
         database = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-        database.setDatabaseName('../db/reliability.db')
+        database.setDatabaseName('./db/reliability.db')
         database.open()
         self.query = QSqlQuery()
         if not self.is_table_existed('device'):
@@ -113,6 +122,7 @@ class MainWindow(QMainWindow):
                 print(self.query.lastError().text())
             else:
                 print('create a breakdown table')
+
     def is_table_existed(self, table_name):
         existed = False
         sql_str = "select count(*) from sqlite_master where type='table' and name='{0}'".format(table_name)
@@ -123,7 +133,12 @@ class MainWindow(QMainWindow):
             else:  # 表存在
                 existed = True
         return existed
+
     def initDevInfo(self):
+        self.ui.devComboBox.clear()
+        self.ui.devComboBox.addItem('选择设备')
+        self.ui.devComboBox_2.clear()
+        self.ui.devComboBox_2.addItem('选择设备')
         query_sql = 'select name from device'
         self.query.prepare(query_sql)
         if not self.query.exec_():
@@ -132,6 +147,8 @@ class MainWindow(QMainWindow):
             while self.query.next():
                 name = self.query.value(0)
                 self.ui.devComboBox.addItem(name)
+                self.ui.devComboBox_2.addItem(name)
+
     def initScatterCharts(self):
         '''
         初始化散点图
@@ -140,300 +157,471 @@ class MainWindow(QMainWindow):
         ##---可靠性分析---
         self.m_scatter_chart = QChart()
         self.m_scatter_series = QScatterSeries(self.m_scatter_chart)
+        self.m_scatter_series_2 = QScatterSeries(self.m_scatter_chart)  # dev_2
+        self.m_scatter_series.setName('设备1')
+        self.m_scatter_series_2.setName('设备2')
         self.m_scatter_chart.addSeries(self.m_scatter_series)
+        self.m_scatter_chart.addSeries(self.m_scatter_series_2)
         self.m_scatter_chart.setTitle("故障间隔时间散点图")  # 设置图题
-        self.m_scatter_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_scatter_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_scatter_chart.createDefaultAxes()  # 创建默认轴
         self.m_scatter_chart.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_scatter_chart.axisX().setRange(0, 1000)
-        self.m_scatter_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_scatter_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_scatter_chart.axisX().setRange(0, 1)
+        self.m_scatter_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_scatter_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_scatter_chart.axisY().setTitleText('概率')  # 设置纵坐标标题
         self.m_scatter_chart.axisY().setRange(0, 1)
-        self.m_scatter_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_scatter_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_scatter_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_scatter_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.scatterView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.scatterView.setChart(self.m_scatter_chart)
         self.ui.scatterView.show()
         ##--维修性分析--
-        self.m_scatter_chart_2 = QChart()
-        self.m_scatter_series_2 = QScatterSeries(self.m_scatter_chart)
-        self.m_scatter_chart_2.addSeries(self.m_scatter_series_2)
-        self.m_scatter_chart_2.setTitle("维修时间散点图")  # 设置图题
-        self.m_scatter_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
-        self.m_scatter_chart_2.createDefaultAxes()  # 创建默认轴
-        self.m_scatter_chart_2.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
-        self.m_scatter_chart_2.axisX().setRange(0, 100)
-        self.m_scatter_chart_2.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_scatter_chart_2.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_scatter_chart_2.axisY().setTitleText('概率')  # 设置纵坐标标题
-        self.m_scatter_chart_2.axisY().setRange(0, 1)
-        self.m_scatter_chart_2.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_scatter_chart_2.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_scatter_chart_maintain = QChart()
+        self.m_scatter_series_maintain = QScatterSeries()
+        self.m_scatter_series_maintain_2 = QScatterSeries()  # dev_2
+        self.m_scatter_series_maintain.setName('设备1')
+        self.m_scatter_series_maintain_2.setName('设备2')
+        self.m_scatter_chart_maintain.addSeries(self.m_scatter_series_maintain)
+        self.m_scatter_chart_maintain.addSeries(self.m_scatter_series_maintain_2)
+        self.m_scatter_chart_maintain.setTitle("维修时间散点图")  # 设置图题
+        self.m_scatter_chart_maintain.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
+        self.m_scatter_chart_maintain.createDefaultAxes()  # 创建默认轴
+        self.m_scatter_chart_maintain.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
+        self.m_scatter_chart_maintain.axisX().setRange(0, 1)
+        self.m_scatter_chart_maintain.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_scatter_chart_maintain.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_scatter_chart_maintain.axisY().setTitleText('概率')  # 设置纵坐标标题
+        self.m_scatter_chart_maintain.axisY().setRange(0, 1)
+        self.m_scatter_chart_maintain.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_scatter_chart_maintain.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.scatterView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.scatterView_2.setChart(self.m_scatter_chart_2)
+        self.ui.scatterView_2.setChart(self.m_scatter_chart_maintain)
         self.ui.scatterView_2.show()
+
     def initLinePlot(self):
         '''
         初始化曲线图
         :return:
         '''
-        #---可靠性分析---
+        # ---可靠性分析---
         # 初始化概率密度图
         self.m_pdf_chart = QChart()
+        # init series
         self.m_pdf_series_ls = QLineSeries()
-        self.m_pdf_series_ls.hovered.connect(self.on_m_pdf_series_hovered)  # 响应显示曲线数值事件
-        self.m_pdf_chart.addSeries(self.m_pdf_series_ls)
+        self.m_pdf_series_ls_2 = QLineSeries()  # dev_2
         self.m_pdf_series_map = QLineSeries()
+        self.m_pdf_series_map_2 = QLineSeries()  # dev_2
+        # connect slot
+        self.m_pdf_series_ls.hovered.connect(self.on_m_pdf_series_hovered)  # 响应显示曲线数值事件
+        self.m_pdf_series_ls_2.hovered.connect(self.on_m_pdf_series_hovered)
         self.m_pdf_series_map.hovered.connect(self.on_m_pdf_series_hovered)  # 响应显示曲线数值事件
+        self.m_pdf_series_map_2.hovered.connect(self.on_m_pdf_series_hovered)
+        # add series
+        self.m_pdf_series_ls.setName('设备1-LS')
+        self.m_pdf_series_map.setName('设备1-MAP')
+        self.m_pdf_series_ls_2.setName('设备2-LS')
+        self.m_pdf_series_map_2.setName('设备2-MAP')
+        self.m_pdf_chart.addSeries(self.m_pdf_series_ls)
         self.m_pdf_chart.addSeries(self.m_pdf_series_map)
+        self.m_pdf_chart.addSeries(self.m_pdf_series_ls_2)
+        self.m_pdf_chart.addSeries(self.m_pdf_series_map_2)
+        # set title and style
         self.m_pdf_chart.setTitle('威布尔分布概率密度图')  # 设置图题
-        self.m_pdf_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_pdf_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_pdf_chart.createDefaultAxes()  # 创建默认轴
         self.m_pdf_chart.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_pdf_chart.axisX().setRange(0, 1000)
-        self.m_pdf_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_pdf_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_pdf_chart.axisX().setRange(0, 1)
+        self.m_pdf_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_pdf_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_pdf_chart.axisY().setTitleText('概率')  # 设置纵坐标标题
-        self.m_pdf_chart.axisY().setRange(0, 1)
-        self.m_pdf_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_pdf_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_pdf_chart.axisY().setRange(0, 10e-4)
+        self.m_pdf_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_pdf_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.pdfView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.pdfView.setChart(self.m_pdf_chart)
         self.ui.pdfView.show()
         # 初始化累积分布图
         self.m_cdf_chart = QChart()
+        # init series
         self.m_cdf_series_ls = QLineSeries()
-        self.m_cdf_series_ls.hovered.connect(self.on_m_cdf_series_hovered)  # 响应显示曲线数值事件
-        self.m_cdf_chart.addSeries(self.m_cdf_series_ls)
         self.m_cdf_series_map = QLineSeries()
+        self.m_cdf_series_ls_2 = QLineSeries()  # dev_2
+        self.m_cdf_series_map_2 = QLineSeries()  # dev_2
+        # connect slot
+        self.m_cdf_series_ls.hovered.connect(self.on_m_cdf_series_hovered)  # 响应显示曲线数值事件
         self.m_cdf_series_map.hovered.connect(self.on_m_cdf_series_hovered)  # 响应显示曲线数值事件
+        self.m_cdf_series_ls_2.hovered.connect(self.on_m_cdf_series_hovered)
+        self.m_cdf_series_map_2.hovered.connect(self.on_m_cdf_series_hovered)
+        # add series
+        self.m_cdf_series_ls.setName('设备1-LS')
+        self.m_cdf_series_map.setName('设备1-MAP')
+        self.m_cdf_series_ls_2.setName('设备2-LS')
+        self.m_cdf_series_map_2.setName('设备2-MAP')
+        self.m_cdf_chart.addSeries(self.m_cdf_series_ls)
         self.m_cdf_chart.addSeries(self.m_cdf_series_map)
+        self.m_cdf_chart.addSeries(self.m_cdf_series_ls_2)
+        self.m_cdf_chart.addSeries(self.m_cdf_series_map_2)
+        # set title and style
         self.m_cdf_chart.setTitle("威布尔分布累积分布图")  # 设置图题
-        self.m_cdf_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_cdf_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_cdf_chart.createDefaultAxes()  # 创建默认轴
         self.m_cdf_chart.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_cdf_chart.axisX().setRange(0, 1000)
-        self.m_cdf_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_cdf_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_cdf_chart.axisX().setRange(0, 1)
+        self.m_cdf_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_cdf_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_cdf_chart.axisY().setTitleText('概率')  # 设置纵坐标标题
         self.m_cdf_chart.axisY().setRange(0, 1)
-        self.m_cdf_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_cdf_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_cdf_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_cdf_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.cdfView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.cdfView.setChart(self.m_cdf_chart)
         self.ui.cdfView.show()
         # 初始化可靠度曲线图
         self.m_relia_chart = QChart()
+        # init series
         self.m_relia_series_ls = QLineSeries()
-        self.m_relia_series_ls.hovered.connect(self.on_m_relia_series_hovered)  # 响应显示曲线数值事件
-        self.m_relia_chart.addSeries(self.m_relia_series_ls)
         self.m_relia_series_map = QLineSeries()
+        self.m_relia_series_ls_2 = QLineSeries()  # dev_2
+        self.m_relia_series_map_2 = QLineSeries()
+        # connect slot
+        self.m_relia_series_ls.hovered.connect(self.on_m_relia_series_hovered)  # 响应显示曲线数值事件
         self.m_relia_series_map.hovered.connect(self.on_m_relia_series_hovered)  # 响应显示曲线数值事件
+        self.m_relia_series_ls_2.hovered.connect(self.on_m_relia_series_hovered)
+        self.m_relia_series_map_2.hovered.connect(self.on_m_relia_series_hovered)
+        # add series
+        self.m_relia_series_ls.setName('设备1-LS')
+        self.m_relia_series_map.setName('设备1-MAP')
+        self.m_relia_series_ls_2.setName('设备2-LS')
+        self.m_relia_series_map_2.setName('设备2-MAP')
+        self.m_relia_chart.addSeries(self.m_relia_series_ls)
         self.m_relia_chart.addSeries(self.m_relia_series_map)
+        self.m_relia_chart.addSeries(self.m_relia_series_ls_2)
+        self.m_relia_chart.addSeries(self.m_relia_series_map_2)
+        # set title and style
         self.m_relia_chart.setTitle("可靠度曲线图")  # 设置图题
-        self.m_relia_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_relia_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_relia_chart.createDefaultAxes()  # 创建默认轴
         self.m_relia_chart.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_relia_chart.axisX().setRange(0, 1000)
-        self.m_relia_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_relia_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_relia_chart.axisX().setRange(0, 1)
+        self.m_relia_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_relia_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_relia_chart.axisY().setTitleText('可靠度')  # 设置纵坐标标题
         self.m_relia_chart.axisY().setRange(0, 1)
-        self.m_relia_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_relia_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_relia_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_relia_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.reliaView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.reliaView.setChart(self.m_relia_chart)
         self.ui.reliaView.show()
         # 初始化失效率曲线图
         self.m_fail_chart = QChart()
+        # init series
         self.m_fail_series_ls = QLineSeries()
-        self.m_fail_series_ls.hovered.connect(self.on_m_fali_series_hovered)  # 响应显示曲线数值事件
-        self.m_fail_chart.addSeries(self.m_fail_series_ls)
         self.m_fail_series_map = QLineSeries()
+        self.m_fail_series_ls_2 = QLineSeries()  # dev_2
+        self.m_fail_series_map_2 = QLineSeries()
+        # connect slot
+        self.m_fail_series_ls.hovered.connect(self.on_m_fali_series_hovered)  # 响应显示曲线数值事件
         self.m_fail_series_map.hovered.connect(self.on_m_fali_series_hovered)  # 响应显示曲线数值事件
+        self.m_fail_series_ls_2.hovered.connect(self.on_m_fali_series_hovered)
+        self.m_fail_series_map_2.hovered.connect(self.on_m_fali_series_hovered)
+        # add series
+        self.m_fail_series_ls.setName('设备1-LS')
+        self.m_fail_series_map.setName('设备1-MAP')
+        self.m_fail_series_ls_2.setName('设备2-LS')
+        self.m_fail_series_map_2.setName('设备2-MAP')
+        self.m_fail_chart.addSeries(self.m_fail_series_ls)
         self.m_fail_chart.addSeries(self.m_fail_series_map)
+        self.m_fail_chart.addSeries(self.m_fail_series_ls_2)
+        self.m_fail_chart.addSeries(self.m_fail_series_map_2)
         self.m_fail_chart.setTitle("失效率曲线图")  # 设置图题
-        self.m_fail_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_fail_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_fail_chart.createDefaultAxes()  # 创建默认轴
         self.m_fail_chart.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_fail_chart.axisX().setRange(0, 1000)
-        self.m_fail_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_fail_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_fail_chart.axisX().setRange(0, 1)
+        self.m_fail_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_fail_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_fail_chart.axisY().setTitleText('失效率')  # 设置纵坐标标题
-        self.m_fail_chart.axisY().setRange(0, 1)
-        self.m_fail_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_fail_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_fail_chart.axisY().setRange(0, 10e-3)
+        self.m_fail_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_fail_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.failView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.failView.setChart(self.m_fail_chart)
         self.ui.failView.show()
         ##---维修性分析---
         # 初始化概率密度图
-        self.m_pdf_chart_2 = QChart()
-        self.m_pdf_series_2_ls = QLineSeries()
-        self.m_pdf_series_2_ls.hovered.connect(self.on_m_pdf_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_pdf_chart_2.addSeries(self.m_pdf_series_2_ls)
-        self.m_pdf_series_2_map = QLineSeries()
-        self.m_pdf_series_2_map.hovered.connect(self.on_m_pdf_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_pdf_chart_2.addSeries(self.m_pdf_series_2_map)
-        self.m_pdf_chart_2.setTitle('威布尔分布概率密度图')  # 设置图题
-        self.m_pdf_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
-        self.m_pdf_chart_2.createDefaultAxes()  # 创建默认轴
-        self.m_pdf_chart_2.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
-        self.m_pdf_chart_2.axisX().setRange(0, 100)
-        self.m_pdf_chart_2.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_pdf_chart_2.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_pdf_chart_2.axisY().setTitleText('概率')  # 设置纵坐标标题
-        self.m_pdf_chart_2.axisY().setRange(0, 1)
-        self.m_pdf_chart_2.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_pdf_chart_2.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_pdf_chart_maintain = QChart()
+        # init series
+        self.m_pdf_series_maintain_ls = QLineSeries()
+        self.m_pdf_series_maintain_ls_2 = QLineSeries()  # dev_2
+        self.m_pdf_series_maintain_map = QLineSeries()
+        self.m_pdf_series_maintain_map_2 = QLineSeries()
+        # connect slot
+        self.m_pdf_series_maintain_ls.hovered.connect(self.on_m_pdf_series_maintain_hovered)  # 响应显示曲线数值事件
+        self.m_pdf_series_maintain_ls_2.hovered.connect(self.on_m_pdf_series_maintain_hovered)
+        self.m_pdf_series_maintain_map.hovered.connect(self.on_m_pdf_series_maintain_hovered)
+        self.m_pdf_series_maintain_map_2.hovered.connect(self.on_m_pdf_series_maintain_hovered)
+        # add series
+        self.m_pdf_series_maintain_ls.setName('设备1-LS')
+        self.m_pdf_series_maintain_ls_2.setName('设备2-LS')
+        self.m_pdf_series_maintain_map.setName('设备1-MAP')
+        self.m_pdf_series_maintain_map_2.setName('设备2-MAP')
+        self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_ls)
+        self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_ls_2)
+        self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_map)
+        self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_map_2)
+        # set style
+        self.m_pdf_chart_maintain.setTitle('威布尔分布概率密度图')  # 设置图题
+        self.m_pdf_chart_maintain.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
+        self.m_pdf_chart_maintain.createDefaultAxes()  # 创建默认轴
+        self.m_pdf_chart_maintain.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
+        self.m_pdf_chart_maintain.axisX().setRange(0, 1)
+        self.m_pdf_chart_maintain.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_pdf_chart_maintain.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_pdf_chart_maintain.axisY().setTitleText('概率')  # 设置纵坐标标题
+        self.m_pdf_chart_maintain.axisY().setRange(0, 10e-4)
+        self.m_pdf_chart_maintain.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_pdf_chart_maintain.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.pdfView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.pdfView_2.setChart(self.m_pdf_chart_2)
+        self.ui.pdfView_2.setChart(self.m_pdf_chart_maintain)
         self.ui.pdfView_2.show()
         # 初始化累积分布图
-        self.m_cdf_chart_2 = QChart()
-        self.m_cdf_series_2_ls = QLineSeries()
-        self.m_cdf_series_2_ls.hovered.connect(self.on_m_cdf_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_cdf_chart_2.addSeries(self.m_cdf_series_2_ls)
-        self.m_cdf_series_2_map = QLineSeries()
-        self.m_cdf_series_2_map.hovered.connect(self.on_m_cdf_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_cdf_chart_2.addSeries(self.m_cdf_series_2_map)
-        self.m_cdf_chart_2.setTitle("威布尔分布累积分布图")  # 设置图题
-        self.m_cdf_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
-        self.m_cdf_chart_2.createDefaultAxes()  # 创建默认轴
-        self.m_cdf_chart_2.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
-        self.m_cdf_chart_2.axisX().setRange(0, 100)
-        self.m_cdf_chart_2.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_cdf_chart_2.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_cdf_chart_2.axisY().setTitleText('概率')  # 设置纵坐标标题
-        self.m_cdf_chart_2.axisY().setRange(0, 1)
-        self.m_cdf_chart_2.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_cdf_chart_2.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_cdf_chart_maintain = QChart()
+        # init series
+        self.m_cdf_series_maintain_ls = QLineSeries()
+        self.m_cdf_series_maintain_ls_2 = QLineSeries()
+        self.m_cdf_series_maintain_map = QLineSeries()
+        self.m_cdf_series_maintain_map_2 = QLineSeries()
+        # connect slot
+        self.m_cdf_series_maintain_ls.hovered.connect(self.on_m_cdf_series_maintain_hovered)  # 响应显示曲线数值事件
+        self.m_cdf_series_maintain_ls_2.hovered.connect(self.on_m_cdf_series_maintain_hovered)
+        self.m_cdf_series_maintain_map.hovered.connect(self.on_m_cdf_series_maintain_hovered)
+        self.m_cdf_series_maintain_map_2.hovered.connect(self.on_m_cdf_series_maintain_hovered)
+        # add series
+        self.m_cdf_series_maintain_ls.setName('设备1-LS')
+        self.m_cdf_series_maintain_ls_2.setName('设备2-LS')
+        self.m_cdf_series_maintain_map.setName('设备1-MAP')
+        self.m_cdf_series_maintain_map_2.setName('设备2-MAP')
+        self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_ls)
+        self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_ls_2)
+        self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_map)
+        self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_map_2)
+        # set style
+        self.m_cdf_chart_maintain.setTitle("威布尔分布累积分布图")  # 设置图题
+        self.m_cdf_chart_maintain.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
+        self.m_cdf_chart_maintain.createDefaultAxes()  # 创建默认轴
+        self.m_cdf_chart_maintain.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
+        self.m_cdf_chart_maintain.axisX().setRange(0, 1)
+        self.m_cdf_chart_maintain.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_cdf_chart_maintain.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_cdf_chart_maintain.axisY().setTitleText('概率')  # 设置纵坐标标题
+        self.m_cdf_chart_maintain.axisY().setRange(0, 1)
+        self.m_cdf_chart_maintain.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_cdf_chart_maintain.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.cdfView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.cdfView_2.setChart(self.m_cdf_chart_2)
+        self.ui.cdfView_2.setChart(self.m_cdf_chart_maintain)
         self.ui.cdfView_2.show()
         # 初始化维修度曲线图
-        self.m_relia_chart_2 = QChart()
-        self.m_relia_series_2_ls = QLineSeries()
-        self.m_relia_series_2_ls.hovered.connect(self.on_m_relia_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_relia_chart_2.addSeries(self.m_relia_series_2_ls)
-        self.m_relia_series_2_map = QLineSeries()
-        self.m_relia_series_2_map.hovered.connect(self.on_m_relia_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_relia_chart_2.addSeries(self.m_relia_series_2_map)
-        self.m_relia_chart_2.setTitle("维修度曲线图")  # 设置图题
-        self.m_relia_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
-        self.m_relia_chart_2.createDefaultAxes()  # 创建默认轴
-        self.m_relia_chart_2.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
-        self.m_relia_chart_2.axisX().setRange(0, 100)
-        self.m_relia_chart_2.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_relia_chart_2.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_relia_chart_2.axisY().setTitleText('维修度')  # 设置纵坐标标题
-        self.m_relia_chart_2.axisY().setRange(0, 1)
-        self.m_relia_chart_2.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_relia_chart_2.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_relia_chart_maintain = QChart()
+        # init series
+        self.m_relia_series_maintain_ls = QLineSeries()
+        self.m_relia_series_maintain_ls_2 = QLineSeries()
+        self.m_relia_series_maintain_map = QLineSeries()
+        self.m_relia_series_maintain_map_2 = QLineSeries()
+        # connect slot
+        self.m_relia_series_maintain_ls.hovered.connect(self.on_m_relia_series_maintain_hovered)  # 响应显示曲线数值事件
+        self.m_relia_series_maintain_ls_2.hovered.connect(self.on_m_relia_series_maintain_hovered)
+        self.m_relia_series_maintain_map.hovered.connect(self.on_m_relia_series_maintain_hovered)
+        self.m_relia_series_maintain_map_2.hovered.connect(self.on_m_relia_series_maintain_hovered)
+        # add series
+        self.m_relia_series_maintain_ls.setName('设备1-LS')
+        self.m_relia_series_maintain_ls_2.setName('设备2-LS')
+        self.m_relia_series_maintain_map.setName('设备1-MAP')
+        self.m_relia_series_maintain_map_2.setName('设备2-MAP')
+        self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_ls)
+        self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_ls_2)
+        self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_map)
+        self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_map_2)
+        # set style
+        self.m_relia_chart_maintain.setTitle("修复率曲线图")  # 设置图题
+        self.m_relia_chart_maintain.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
+        self.m_relia_chart_maintain.createDefaultAxes()  # 创建默认轴
+        self.m_relia_chart_maintain.axisX().setTitleText('维修时间/h')  # 设置横坐标标题
+        self.m_relia_chart_maintain.axisX().setRange(0, 1)
+        self.m_relia_chart_maintain.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_relia_chart_maintain.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_relia_chart_maintain.axisY().setTitleText('修复率')  # 设置纵坐标标题
+        self.m_relia_chart_maintain.axisY().setRange(0, 1)
+        self.m_relia_chart_maintain.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_relia_chart_maintain.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.reliaView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.reliaView_2.setChart(self.m_relia_chart_2)
+        self.ui.reliaView_2.setChart(self.m_relia_chart_maintain)
         self.ui.reliaView_2.show()
         # 初始化失效率曲线图
-        self.m_fail_chart_2 = QChart()
-        self.m_fail_series_2_ls = QLineSeries()
-        self.m_fail_series_2_ls.hovered.connect(self.on_m_fali_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_fail_chart_2.addSeries(self.m_fail_series_2_ls)
-        self.m_fail_series_2_map = QLineSeries()
-        self.m_fail_series_2_map.hovered.connect(self.on_m_fali_series_2_hovered)  # 响应显示曲线数值事件
-        self.m_fail_chart_2.addSeries(self.m_fail_series_2_map)
-        self.m_fail_chart_2.setTitle("失效率曲线图")  # 设置图题
-        self.m_fail_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
-        self.m_fail_chart_2.createDefaultAxes()  # 创建默认轴
-        self.m_fail_chart_2.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
-        self.m_fail_chart_2.axisX().setRange(0, 100)
-        self.m_fail_chart_2.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_fail_chart_2.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_fail_chart_2.axisY().setTitleText('失效率')  # 设置纵坐标标题
-        self.m_fail_chart_2.axisY().setRange(0, 1)
-        self.m_fail_chart_2.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_fail_chart_2.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_fail_chart_maintain = QChart()
+        # init series
+        self.m_fail_series_maintain_ls = QLineSeries()
+        self.m_fail_series_maintain_ls_2 = QLineSeries()
+        self.m_fail_series_maintain_map = QLineSeries()
+        self.m_fail_series_maintain_map_2 = QLineSeries()
+        # connect series
+        self.m_fail_series_maintain_ls.hovered.connect(self.on_m_fali_series_maintain_hovered)  # 响应显示曲线数值事件
+        self.m_fail_series_maintain_ls_2.hovered.connect(self.on_m_fali_series_maintain_hovered)
+        self.m_fail_series_maintain_map.hovered.connect(self.on_m_fali_series_maintain_hovered)
+        self.m_fail_series_maintain_map_2.hovered.connect(self.on_m_fali_series_maintain_hovered)
+        # add series
+        self.m_fail_series_maintain_ls.setName('设备1-LS')
+        self.m_fail_series_maintain_ls_2.setName('设备2-LS')
+        self.m_fail_series_maintain_map.setName('设备1-MAP')
+        self.m_fail_series_maintain_map_2.setName('设备2-MAP')
+        self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_ls)
+        self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_ls_2)
+        self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_map)
+        self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_map_2)
+        self.m_fail_chart_maintain.setTitle("失效率曲线图")  # 设置图题
+        self.m_fail_chart_maintain.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
+        self.m_fail_chart_maintain.createDefaultAxes()  # 创建默认轴
+        self.m_fail_chart_maintain.axisX().setTitleText('故障间隔时间/h')  # 设置横坐标标题
+        self.m_fail_chart_maintain.axisX().setRange(0, 1)
+        self.m_fail_chart_maintain.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_fail_chart_maintain.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_fail_chart_maintain.axisY().setTitleText('失效率')  # 设置纵坐标标题
+        self.m_fail_chart_maintain.axisY().setRange(0, 10e-4)
+        self.m_fail_chart_maintain.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_fail_chart_maintain.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.ui.failView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.failView_2.setChart(self.m_fail_chart_2)
+        self.ui.failView_2.setChart(self.m_fail_chart_maintain)
         self.ui.failView_2.show()
 
     def initRawDataCharts(self):
-        self.m_temp1_chart = QChart()
-        self.m_temp1_series = QLineSeries()
-        self.m_temp1_series.setColor(QColor(0, 0, 255, 255))
-        self.m_temp1_scatter = QScatterSeries()
-        self.m_temp1_scatter.setColor(QColor(0, 0, 255, 255))
-        self.m_temp1_chart.addSeries(self.m_temp1_series)
-        self.m_temp1_chart.addSeries(self.m_temp1_scatter)
-        self.m_temp1_chart.setTitle("环境温度——时间折线图")  # 设置图题
-        self.m_temp1_chart.setTitleFont(QFont('SimHei', 15))  # 设置图题字体的类型和大小
-        self.m_temp1_chart.createDefaultAxes()  # 创建默认轴
-        self.m_temp1_chart.axisX().setTitleText('运行时间/h')  # 设置横坐标标题
-        self.m_temp1_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_temp1_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
-        self.m_temp1_chart.axisY().setTitleText('温度/℃')  # 设置纵坐标标题
-        self.m_temp1_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_temp1_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
-        self.m_temp1_chart.legend().hide()
+        ## 环境温度
+        self.m_env_temp_chart = QChart()
+        # init series
+        self.m_env_temp_series = QLineSeries()
+        self.m_env_temp_series.setName('设备1')
+        self.m_env_temp_series.setColor(QColor(0, 0, 255))
+        self.m_env_temp_scatter = QScatterSeries()
+        self.m_env_temp_scatter.setMarkerSize(10)
+        self.m_env_temp_scatter.setColor(QColor(0, 0, 255))
+        self.m_env_temp_series_2 = QLineSeries()  # dev_2
+        self.m_env_temp_series_2.setName('设备2')
+        self.m_env_temp_series_2.setColor(QColor(0, 255, 0))
+        self.m_env_temp_scatter_2 = QScatterSeries()
+        self.m_env_temp_scatter_2.setMarkerSize(10)
+        self.m_env_temp_scatter_2.setColor(QColor(0, 255, 0))
+        self.m_env_temp_chart.addSeries(self.m_env_temp_series)
+        self.m_env_temp_chart.addSeries(self.m_env_temp_scatter)
+        self.m_env_temp_chart.addSeries(self.m_env_temp_series_2)
+        self.m_env_temp_chart.addSeries(self.m_env_temp_scatter_2)
+        # set style
+        self.m_env_temp_chart.setTitle("环境温度——时间折线图")  # 设置图题
+        self.m_env_temp_chart.setTitleFont(QFont('SimHei', 15))  # 设置图题字体的类型和大小
+        self.m_env_temp_chart.createDefaultAxes()  # 创建默认轴
+        self.m_env_temp_chart.axisX().setTitleText('运行时间/h')  # 设置横坐标标题
+        self.m_env_temp_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_env_temp_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
+        self.m_env_temp_chart.axisY().setTitleText('温度/℃')  # 设置纵坐标标题
+        self.m_env_temp_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_env_temp_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
+        self.m_env_temp_chart.legend().hide()
         self.ui.tempView_1.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
-        self.ui.tempView_1.setChart(self.m_temp1_chart)
+        self.ui.tempView_1.setChart(self.m_env_temp_chart)
         self.ui.tempView_1.show()
+        ## 刀头温度
         self.m_kni_temp_chart = QChart()
+        # init series
         self.m_kni_temp_series = QLineSeries()
-        self.m_kni_temp_series.setColor(QColor(0, 0, 255, 255))
+        self.m_kni_temp_series.setName('设备1')
+        self.m_kni_temp_series.setColor(QColor(0, 0, 255))
         self.m_kni_temp_scatter = QScatterSeries()
-        self.m_kni_temp_scatter.setColor(QColor(0, 0, 255, 255))
+        self.m_kni_temp_scatter.setMarkerSize(10)
+        self.m_kni_temp_scatter.setColor(QColor(0, 0, 255))
+        self.m_kni_temp_series_2 = QLineSeries()
+        self.m_kni_temp_series_2.setName('设备2')
+        self.m_kni_temp_series_2.setColor(QColor(0, 255, 0))
+        self.m_kni_temp_scatter_2 = QScatterSeries()
+        self.m_kni_temp_scatter_2.setMarkerSize(10)
+        self.m_kni_temp_scatter_2.setColor(QColor(0, 255, 0))
         self.m_kni_temp_chart.addSeries(self.m_kni_temp_series)
         self.m_kni_temp_chart.addSeries(self.m_kni_temp_scatter)
+        self.m_kni_temp_chart.addSeries(self.m_kni_temp_series_2)
+        self.m_kni_temp_chart.addSeries(self.m_kni_temp_scatter_2)
+        # set style
         self.m_kni_temp_chart.setTitle("刀头温度——时间折线图")  # 设置图题
         self.m_kni_temp_chart.setTitleFont(QFont('SimHei', 15))  # 设置图题字体的类型和大小
         self.m_kni_temp_chart.createDefaultAxes()  # 创建默认轴
         self.m_kni_temp_chart.axisX().setTitleText('运行时间/h')  # 设置横坐标标题
-        self.m_kni_temp_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_kni_temp_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_kni_temp_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_kni_temp_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_kni_temp_chart.axisY().setTitleText('温度/℃')  # 设置纵坐标标题
-        self.m_kni_temp_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_kni_temp_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_kni_temp_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_kni_temp_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_kni_temp_chart.legend().hide()
         self.ui.tempView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.tempView_2.setChart(self.m_kni_temp_chart)
         self.ui.tempView_2.show()
+        ## 重复定位精度
         self.m_rpa_chart = QChart()
+        # init series
         self.m_rpa_series = QLineSeries()
-        self.m_rpa_series.setColor(QColor(0, 0, 255, 255))
+        self.m_rpa_series.setName('设备1')
+        self.m_rpa_series.setColor(QColor(0, 0, 255))
         self.m_rpa_scatter = QScatterSeries()
-        self.m_rpa_scatter.setColor(QColor(0, 0, 255, 255))
+        self.m_rpa_scatter.setMarkerSize(10)
+        self.m_rpa_scatter.setColor(QColor(0, 0, 255))
+        self.m_rpa_series_2 = QLineSeries()
+        self.m_rpa_series_2.setName('设备2')
+        self.m_rpa_series_2.setColor(QColor(0, 255, 0))
+        self.m_rpa_scatter_2 = QScatterSeries()
+        self.m_rpa_scatter_2.setMarkerSize(10)
+        self.m_rpa_scatter_2.setColor(QColor(0, 255, 0))
         self.m_rpa_chart.addSeries(self.m_rpa_scatter)
         self.m_rpa_chart.addSeries(self.m_rpa_series)
+        self.m_rpa_chart.addSeries(self.m_rpa_scatter_2)
+        self.m_rpa_chart.addSeries(self.m_rpa_series_2)
+        # set style
         self.m_rpa_chart.setTitle("重复定位精度——时间折线图")  # 设置图题
         self.m_rpa_chart.setTitleFont(QFont('SimHei', 15))  # 设置图题字体的类型和大小
         self.m_rpa_chart.createDefaultAxes()  # 创建默认轴
         self.m_rpa_chart.axisX().setTitleText('运行时间/h')  # 设置横坐标标题
-        self.m_rpa_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_rpa_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_rpa_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_rpa_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_rpa_chart.axisY().setTitleText('重复定位精度/μm')  # 设置纵坐标标题
-        self.m_rpa_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_rpa_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_rpa_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_rpa_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_rpa_chart.legend().hide()
         self.ui.rpaView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.rpaView.setChart(self.m_rpa_chart)
         self.ui.rpaView.show()
+        ## 温差
         self.m_stra_chart = QChart()
+        # init series
         self.m_stra_series = QLineSeries()
-        self.m_stra_series.setColor(QColor(0, 0, 255, 255))
+        self.m_stra_series.setName('设备1')
+        self.m_stra_series.setColor(QColor(0, 0, 255))
         self.m_stra_scatter = QScatterSeries()
-        self.m_stra_scatter.setColor(QColor(0, 0, 255, 255))
+        self.m_stra_scatter.setMarkerSize(10)
+        self.m_stra_scatter.setColor(QColor(0, 0, 255))
+        self.m_stra_series_2 = QLineSeries()
+        self.m_stra_series_2.setName('设备2')
+        self.m_stra_series_2.setColor(QColor(0, 255, 0))
+        self.m_stra_scatter_2 = QScatterSeries()
+        self.m_stra_scatter_2.setMarkerSize(10)
+        self.m_stra_scatter_2.setColor(QColor(0, 255, 0))
         self.m_stra_chart.addSeries(self.m_stra_scatter)
         self.m_stra_chart.addSeries(self.m_stra_series)
+        self.m_stra_chart.addSeries(self.m_stra_scatter_2)
+        self.m_stra_chart.addSeries(self.m_stra_series_2)
+        # set style
         self.m_stra_chart.setTitle("温差——时间折线图")  # 设置图题
         self.m_stra_chart.setTitleFont(QFont('SimHei', 15))  # 设置图题字体的类型和大小
         self.m_stra_chart.createDefaultAxes()  # 创建默认轴
         self.m_stra_chart.axisX().setTitleText('运行时间/h')  # 设置横坐标标题
-        self.m_stra_chart.axisX().setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
-        self.m_stra_chart.axisX().setTitleFont(QFont('SansSerif', 15))  # 设置横坐标标题字体的类型和大小
+        self.m_stra_chart.axisX().setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
+        self.m_stra_chart.axisX().setTitleFont(QFont('SansSerif', 10))  # 设置横坐标标题字体的类型和大小
         self.m_stra_chart.axisY().setTitleText('温度/℃')  # 设置纵坐标标题
-        self.m_stra_chart.axisY().setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        self.m_stra_chart.axisY().setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        self.m_stra_chart.axisY().setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        self.m_stra_chart.axisY().setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_stra_chart.legend().hide()
         self.ui.straView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.straView.setChart(self.m_stra_chart)
@@ -443,17 +631,17 @@ class MainWindow(QMainWindow):
         '''
         初始化柱状图
         '''
-        #---整机部分---
+        # ---整机部分---
         # 故障模式统计图
         self.m_patt_chart = QChart()
         self.m_patt_series = QBarSeries()
         axisY = QValueAxis()
-        axisY.setTitleText('概率')    # 设置纵坐标标题
-        axisY.setRange(0, 1)    # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setTitleText('概率')  # 设置纵坐标标题
+        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_patt_chart.setTitle("故障模式统计图")  # 设置图题
-        self.m_patt_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_patt_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_patt_chart.createDefaultAxes()  # 创建默认轴
         self.m_patt_chart.setAxisY(axisY)
         self.ui.pattView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -465,10 +653,10 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_posi_chart.setTitle("故障部位统计图")  # 设置图题
-        self.m_posi_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_posi_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_posi_chart.createDefaultAxes()  # 创建默认轴
         self.m_posi_chart.setAxisY(axisY)
         self.ui.posiView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -480,10 +668,10 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_reason_chart.setTitle("故障原因统计图")  # 设置图题
-        self.m_reason_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_reason_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_reason_chart.createDefaultAxes()  # 创建默认轴
         self.m_reason_chart.setAxisY(axisY)
         self.ui.reasonView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -495,25 +683,25 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_root_chart.setTitle("故障溯源统计图")  # 设置图题
-        self.m_root_chart.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_root_chart.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_root_chart.createDefaultAxes()  # 创建默认轴
         self.m_root_chart.setAxisY(axisY)
         self.ui.rootView.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.rootView.setChart(self.m_root_chart)
         self.ui.rootView.show()
-        #---子系统部分---
+        # ---子系统部分---
         self.m_patt_chart_2 = QChart()
         self.m_patt_series_2 = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_patt_chart_2.setTitle("故障模式统计图")  # 设置图题
-        self.m_patt_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_patt_chart_2.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_patt_chart_2.createDefaultAxes()  # 创建默认轴
         self.m_patt_chart_2.setAxisY(axisY)
         self.ui.pattView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -525,10 +713,10 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_posi_chart_2.setTitle("故障部位统计图")  # 设置图题
-        self.m_posi_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_posi_chart_2.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_posi_chart_2.createDefaultAxes()  # 创建默认轴
         self.m_posi_chart_2.setAxisY(axisY)
         self.ui.posiView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -540,10 +728,10 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_reason_chart_2.setTitle("故障原因统计图")  # 设置图题
-        self.m_reason_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_reason_chart_2.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_reason_chart_2.createDefaultAxes()  # 创建默认轴
         self.m_reason_chart_2.setAxisY(axisY)
         self.ui.reasonView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -555,10 +743,10 @@ class MainWindow(QMainWindow):
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
         axisY.setRange(0, 1)  # 设置纵坐标范围
-        axisY.setLabelsFont(QFont('Times New Roman', 13))  # 设置纵坐标刻度的字体类型和大小
-        axisY.setTitleFont(QFont('SansSerif', 15))  # 设置纵坐标标题字体的类型和大小
+        axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
+        axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_root_chart_2.setTitle("故障溯源统计图")  # 设置图题
-        self.m_root_chart_2.setTitleFont(QFont('SimHei', 20))  # 设置图题字体的类型和大小
+        self.m_root_chart_2.setTitleFont(QFont('SimHei', 16))  # 设置图题字体的类型和大小
         self.m_root_chart_2.createDefaultAxes()  # 创建默认轴
         self.m_root_chart_2.setAxisY(axisY)
         self.ui.rootView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
@@ -569,78 +757,85 @@ class MainWindow(QMainWindow):
         curr_row = self.ui.listWidget.currentRow()
         self.ui.stackedWidget.setCurrentIndex(curr_row)
 
-    def read_raw_data(self):
+    def read_raw_data(self, dev_id):
         '''
-        读取原始数据
-        :param filename: 文件名
+        读取设备dev_id的运行记录
+        :param dev_id:
         :return:
         '''
         data_table = dict()  # 保存读取数据
         # 数据库查询
-        dev_id = self.ui.devWidget.item(2).text()
-        if dev_id.strip(' ') != '':
-            dev_id = int(dev_id)
-            x_table = []
-            run_times = []
-            env_temps = []
-            kni_temps = []
-            rpas = []
-            query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
-            self.query.prepare(query_sql)
-            self.query.bindValue(':dev_id', dev_id)
-            self.query.bindValue(':axis', 'X')
-            if not self.query.exec_():
-                print(self.query.lastError().text())
-                return data_table
-            else:
-                while self.query.next():
-                    run_times.append(self.query.value(RUN_TIME))
-                    env_temps.append(self.query.value(ENV_TEMP))
-                    kni_temps.append(self.query.value(KNI_TEMP))
-                    rpas.append(self.query.value(RPA))
-                x_table.append(run_times);x_table.append(env_temps);x_table.append(kni_temps);x_table.append(rpas)
-            y_table = []
-            run_times = []
-            env_temps = []
-            kni_temps = []
-            rpas = []
-            query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
-            self.query.prepare(query_sql)
-            self.query.bindValue(':dev_id', dev_id)
-            self.query.bindValue(':axis', 'Y')
-            if not self.query.exec_():
-                print(self.query.lastError().text())
-                return data_table
-            else:
-                while self.query.next():
-                    run_times.append(self.query.value(RUN_TIME))
-                    env_temps.append(self.query.value(ENV_TEMP))
-                    kni_temps.append(self.query.value(KNI_TEMP))
-                    rpas.append(self.query.value(RPA))
-                y_table.append(run_times);y_table.append(env_temps);y_table.append(kni_temps);y_table.append(rpas)
-            z_table = []
-            run_times = []
-            env_temps = []
-            kni_temps = []
-            rpas = []
-            query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
-            self.query.prepare(query_sql)
-            self.query.bindValue(':dev_id', dev_id)
-            self.query.bindValue(':axis', 'Z')
-            if not self.query.exec_():
-                print(self.query.lastError().text())
-                return data_table
-            else:
-                while self.query.next():
-                    run_times.append(self.query.value(RUN_TIME))
-                    env_temps.append(self.query.value(ENV_TEMP))
-                    kni_temps.append(self.query.value(KNI_TEMP))
-                    rpas.append(self.query.value(RPA))
-                z_table.append(run_times);z_table.append(env_temps);z_table.append(kni_temps);z_table.append(rpas)
-            # 存储
-            data_table['x_table'] = x_table
-            data_table['y_table'] = y_table
-            data_table['z_table'] = z_table
+        x_table = []
+        run_times = []
+        env_temps = []
+        kni_temps = []
+        rpas = []
+        query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
+        self.query.prepare(query_sql)
+        self.query.bindValue(':dev_id', dev_id)
+        self.query.bindValue(':axis', 'X')
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+            return data_table
+        else:
+            while self.query.next():
+                run_times.append(self.query.value(RUN_TIME))
+                env_temps.append(self.query.value(ENV_TEMP))
+                kni_temps.append(self.query.value(KNI_TEMP))
+                rpas.append(self.query.value(RPA))
+            x_table.append(run_times)
+            x_table.append(env_temps)
+            x_table.append(kni_temps)
+            x_table.append(rpas)
+        y_table = []
+        run_times = []
+        env_temps = []
+        kni_temps = []
+        rpas = []
+        query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
+        self.query.prepare(query_sql)
+        self.query.bindValue(':dev_id', dev_id)
+        self.query.bindValue(':axis', 'Y')
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+            return data_table
+        else:
+            while self.query.next():
+                run_times.append(self.query.value(RUN_TIME))
+                env_temps.append(self.query.value(ENV_TEMP))
+                kni_temps.append(self.query.value(KNI_TEMP))
+                rpas.append(self.query.value(RPA))
+            y_table.append(run_times)
+            y_table.append(env_temps)
+            y_table.append(kni_temps)
+            y_table.append(rpas)
+        z_table = []
+        run_times = []
+        env_temps = []
+        kni_temps = []
+        rpas = []
+        query_sql = 'select run_time, env_temp, kni_temp, rpa from record where dev_id = :dev_id and axis = :axis'
+        self.query.prepare(query_sql)
+        self.query.bindValue(':dev_id', dev_id)
+        self.query.bindValue(':axis', 'Z')
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+            return data_table
+        else:
+            while self.query.next():
+                run_times.append(self.query.value(RUN_TIME))
+                env_temps.append(self.query.value(ENV_TEMP))
+                kni_temps.append(self.query.value(KNI_TEMP))
+                rpas.append(self.query.value(RPA))
+            z_table.append(run_times)
+            z_table.append(env_temps)
+            z_table.append(kni_temps)
+            z_table.append(rpas)
+        # 存储
+        data_table['x_table'] = x_table
+        data_table['y_table'] = y_table
+        data_table['z_table'] = z_table
+
         return data_table
 
     def find_fault_time(self, data_table, temp_thresh, rpa_thresh):
@@ -663,169 +858,208 @@ class MainWindow(QMainWindow):
                 fault_time.append(x_table[RUN_TIME][i])
         return fault_time
 
-    def plot_relia_charts(self):
-        # 绘制散点图
-        for t, prob in zip(rf.run_time_data, rf.run_time_prob):
-            self.m_scatter_series.append(t, prob)
-        # 重新设定x轴范围
-        t_max = max(rf.run_time_data)
-        self.m_scatter_chart.axisX().setRange(0, t_max)
-        self.m_pdf_chart.axisX().setRange(0, t_max)
-        self.m_cdf_chart.axisX().setRange(0, t_max)
-        self.m_relia_chart.axisX().setRange(0, t_max)
-        self.m_fail_chart.axisX().setRange(0, t_max)
-        ## 以下是最小二乘法计算
-        lambda_hat, beta_hat, beta_std = estimate.least_square(rf.run_time_data)
-        # 将全局变量传给function模块
-        rf.mu, rf.sigma = beta_hat, beta_std
-        self.lambda_hat, self.beta_hat = lambda_hat, beta_hat
+    def compute_curves(self, run_time_data, method=0):
+        t_max = max(run_time_data)
         t_range = np.arange(1, t_max, 1)
-        # 计算概率密度曲线
-        pdf_prob_ls = rf.Weibull_pdf(lambda_hat, beta_hat, t_range)
-        # 计算累积分布曲线
-        cdf_prob_ls = rf.Weibull_cdf(lambda_hat, beta_hat, t_range)
-        # 计算可靠度曲线
-        relia_prob_ls = rf.reliability(lambda_hat, beta_hat, t_range)
-        # 计算失效率曲线
-        fail_prob_ls = rf.failure_rate(lambda_hat, beta_hat, t_range)
-        ## 以下是极大后验估计法计算
-        lambda_map, beta_map = estimate.map_estimate([lambda_hat, beta_hat])
-        self.lambda_map, self.beta_map = lambda_map, beta_map
-        # 计算概率密度曲线
-        pdf_prob_map = rf.Weibull_pdf(lambda_map, beta_map, t_range)
-        # 计算累积分布曲线
-        cdf_prob_map = rf.Weibull_cdf(lambda_map, beta_map, t_range)
-        # 计算可靠度曲线
-        relia_prob_map = rf.reliability(lambda_map, beta_map, t_range)
-        # 计算失效率曲线
-        fail_prob_map = rf.failure_rate(lambda_map, beta_map, t_range)
-        # 重新设定y轴范围
-        self.m_pdf_chart.axisY().setRange(0, max(pdf_prob_ls))
-        self.m_cdf_chart.axisY().setRange(0, max(cdf_prob_ls))
-        self.m_relia_chart.axisY().setRange(0, max(relia_prob_ls))
-        self.m_fail_chart.axisY().setRange(0, max(fail_prob_ls))
-        method = self.ui.comboBox.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
+        lambda_hat, beta_hat, beta_std = estimate.least_square(run_time_data)
         if method == 0:
-            self.m_pdf_chart.removeSeries(self.m_pdf_series_map)
-            self.m_cdf_chart.removeSeries(self.m_cdf_series_map)
-            self.m_relia_chart.removeSeries(self.m_relia_series_map)
-            self.m_fail_chart.removeSeries(self.m_fail_series_map)
-            # 填充表格
-            self.ui.resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_hat)
-            self.ui.resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_hat)
-            self.ui.resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat, beta_hat))
+            ## 以下是最小二乘法计算
+            # 计算概率密度曲线
+            pdf_prob_ls = rf.Weibull_pdf(lambda_hat, beta_hat, t_range)
+            # 计算累积分布曲线
+            cdf_prob_ls = rf.Weibull_cdf(lambda_hat, beta_hat, t_range)
+            # 计算可靠度曲线
+            relia_prob_ls = rf.reliability(lambda_hat, beta_hat, t_range)
+            # 计算失效率曲线
+            fail_prob_ls = rf.failure_rate(lambda_hat, beta_hat, t_range)
+            return lambda_hat, beta_hat, pdf_prob_ls, cdf_prob_ls, relia_prob_ls, fail_prob_ls
         else:
-            self.m_pdf_chart.removeSeries(self.m_pdf_series_ls)
-            self.m_cdf_chart.removeSeries(self.m_cdf_series_ls)
-            self.m_relia_chart.removeSeries(self.m_relia_series_ls)
-            self.m_fail_chart.removeSeries(self.m_fail_series_ls)
-            # 填充表格
-            self.ui.resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_map)
-            self.ui.resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_map)
-            self.ui.resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_map, beta_map))
-        # 绘制概率密度曲线
-        self.m_pdf_series_ls.clear()
-        for t, prob in zip(t_range, pdf_prob_ls):
-            self.m_pdf_series_ls.append(t, prob)
-        # 绘制累积分布曲线
-        self.m_cdf_series_ls.clear()
-        for t, prob in zip(t_range, cdf_prob_ls):
-            self.m_cdf_series_ls.append(t, prob)
-        # 绘制可靠度曲线
-        self.m_relia_series_ls.clear()
-        for t, prob in zip(t_range, relia_prob_ls):
-            self.m_relia_series_ls.append(t, prob)
-        # 绘制失效率曲线
-        self.m_fail_series_ls.clear()
-        for t, prob in zip(t_range, fail_prob_ls):
-            self.m_fail_series_ls.append(t, prob)
-        # 绘制概率密度曲线
-        self.m_pdf_series_map.clear()
-        for t, prob in zip(t_range, pdf_prob_map):
-            self.m_pdf_series_map.append(t, prob)
-        # 绘制累积分布曲线
-        self.m_cdf_series_map.clear()
-        for t, prob in zip(t_range, cdf_prob_map):
-            self.m_cdf_series_map.append(t, prob)
-        # 绘制可靠度曲线
-        self.m_relia_series_map.clear()
-        for t, prob in zip(t_range, relia_prob_map):
-            self.m_relia_series_map.append(t, prob)
-        # 绘制失效率曲线
-        self.m_fail_series_map.clear()
-        for t, prob in zip(t_range, fail_prob_map):
-            self.m_fail_series_map.append(t, prob)
+            ## 以下是极大后验估计法计算
+            lambda_map, beta_map = estimate.map_estimate([lambda_hat, beta_hat], t=run_time_data, mu=lambda_hat,
+                                                         sigma=beta_std)
+            # 计算概率密度曲线
+            pdf_prob_map = rf.Weibull_pdf(lambda_map, beta_map, t_range)
+            # 计算累积分布曲线
+            cdf_prob_map = rf.Weibull_cdf(lambda_map, beta_map, t_range)
+            # 计算可靠度曲线
+            relia_prob_map = rf.reliability(lambda_map, beta_map, t_range)
+            # 计算失效率曲线
+            fail_prob_map = rf.failure_rate(lambda_map, beta_map, t_range)
+            return lambda_map, beta_map, pdf_prob_map, cdf_prob_map, relia_prob_map, fail_prob_map
 
-    def plot_raw_data(self, data_table):
+    def plot_relia_charts(self, run_time_data, m_scatter_chart, m_scatter_series, m_pdf_chart, m_pdf_series_ls,
+                          m_pdf_series_map, m_cdf_chart, m_cdf_series_ls, m_cdf_series_map, m_relia_chart,
+                          m_relia_series_ls, m_relia_series_map, m_fail_chart, m_fail_series_ls, m_fail_series_map,
+                          resultWidget):
+        '''
+        绘制可靠性分析相关曲线
+        :param run_time_data_1: 设备1的故障时间间隔
+        :param run_time_data_2: 设备2的故障时间间隔
+        :return:
+        '''
+        t_max = np.max(run_time_data)
+        t_range = np.arange(1, t_max, 1)
+        run_time_prob = np.array(
+            [(i - 0.3) / (len(run_time_data) + 0.4) for i in range(1, len(run_time_data) + 1)])
+        # 绘制散点图
+        for t, prob in zip(run_time_data, run_time_prob):
+            m_scatter_series.append(t, prob)
+        # 重新设定x轴范围
+        old_max = m_scatter_chart.axisX().max()
+        m_scatter_chart.axisX().setRange(0, np.max([t_max, old_max]))
+        m_pdf_chart.axisX().setRange(0, np.max([t_max, old_max]))
+        m_cdf_chart.axisX().setRange(0, np.max([t_max, old_max]))
+        m_relia_chart.axisX().setRange(0, np.max([t_max, old_max]))
+        m_fail_chart.axisX().setRange(0, np.max([t_max, old_max]))
+        # 计算各曲线
+        lambda_hat, beta_hat, pdf_prob_ls, cdf_prob_ls, relia_prob_ls, fail_prob_ls = self.compute_curves(run_time_data,
+                                                                                                          method=0)
+        lambda_map, beta_map, pdf_prob_map, cdf_prob_map, relia_prob_map, fail_prob_map = self.compute_curves(
+            run_time_data, method=1)
+        # 保存全局变量
+        if m_pdf_series_ls == self.m_pdf_series_ls:
+            self.lambda_hat_1, self.beta_hat_1 = lambda_hat, beta_hat
+        else:
+            self.lambda_hat_2, self.beta_hat_2 = lambda_hat, beta_hat
+        if m_pdf_series_map == self.m_pdf_series_map:
+            self.lambda_map_1, self.beta_map_1 = lambda_map, beta_map
+        else:
+            self.lambda_map_2, self.beta_map_2 = lambda_map, beta_map
+        # 重新设定y轴范围
+        m_pdf_chart.axisY().setRange(0, max(np.max(pdf_prob_ls), np.max(pdf_prob_map), m_pdf_chart.axisY().max()))
+        m_cdf_chart.axisY().setRange(0, max(np.max(cdf_prob_ls), np.max(cdf_prob_map), m_cdf_chart.axisY().max()))
+        m_relia_chart.axisY().setRange(0,
+                                       max(np.max(relia_prob_ls), np.max(relia_prob_map), m_relia_chart.axisY().max()))
+        m_fail_chart.axisY().setRange(0, max(np.max(fail_prob_ls), np.max(fail_prob_map), m_fail_chart.axisY().max()))
+        method = self.ui.comboBox.currentIndex()  # 获取算法选择索引, 0---最小二乘法, 1---贝叶斯估计法
+        if method == 0:
+            m_pdf_chart.removeSeries(self.m_pdf_series_map)
+            m_cdf_chart.removeSeries(self.m_cdf_series_map)
+            m_relia_chart.removeSeries(self.m_relia_series_map)
+            m_fail_chart.removeSeries(self.m_fail_series_map)
+
+            m_pdf_chart.removeSeries(self.m_pdf_series_map_2)
+            m_cdf_chart.removeSeries(self.m_cdf_series_map_2)
+            m_relia_chart.removeSeries(self.m_relia_series_map_2)
+            m_fail_chart.removeSeries(self.m_fail_series_map_2)
+            # 填充表格
+            resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_hat)
+            resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_hat)
+            resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat, beta_hat))
+        else:
+            m_pdf_chart.removeSeries(self.m_pdf_series_ls)
+            m_cdf_chart.removeSeries(self.m_cdf_series_ls)
+            m_relia_chart.removeSeries(self.m_relia_series_ls)
+            m_fail_chart.removeSeries(self.m_fail_series_ls)
+
+            m_pdf_chart.removeSeries(self.m_pdf_series_ls_2)
+            m_cdf_chart.removeSeries(self.m_cdf_series_ls_2)
+            m_relia_chart.removeSeries(self.m_relia_series_ls_2)
+            m_fail_chart.removeSeries(self.m_fail_series_ls_2)
+            # 填充表格
+            resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_map)
+            resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_map)
+            resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_map, beta_map))
+        # 绘制概率密度曲线
+        m_pdf_series_ls.clear()
+        for t, prob in zip(t_range, pdf_prob_ls):
+            m_pdf_series_ls.append(t, prob)
+        # 绘制累积分布曲线
+        m_cdf_series_ls.clear()
+        for t, prob in zip(t_range, cdf_prob_ls):
+            m_cdf_series_ls.append(t, prob)
+        # 绘制可靠度曲线
+        m_relia_series_ls.clear()
+        for t, prob in zip(t_range, relia_prob_ls):
+            m_relia_series_ls.append(t, prob)
+        # 绘制失效率曲线
+        m_fail_series_ls.clear()
+        for t, prob in zip(t_range, fail_prob_ls):
+            m_fail_series_ls.append(t, prob)
+        # 绘制概率密度曲线
+        m_pdf_series_map.clear()
+        for t, prob in zip(t_range, pdf_prob_map):
+            m_pdf_series_map.append(t, prob)
+        # 绘制累积分布曲线
+        m_cdf_series_map.clear()
+        for t, prob in zip(t_range, cdf_prob_map):
+            m_cdf_series_map.append(t, prob)
+        # 绘制可靠度曲线
+        m_relia_series_map.clear()
+        for t, prob in zip(t_range, relia_prob_map):
+            m_relia_series_map.append(t, prob)
+        # 绘制失效率曲线
+        m_fail_series_map.clear()
+        for t, prob in zip(t_range, fail_prob_map):
+            m_fail_series_map.append(t, prob)
+
+    def plot_raw_data(self, data_table, m_env_temp_series, m_env_temp_scatter, m_kni_temp_series, m_kni_temp_scatter,
+                      m_rpa_series, m_rpa_scatter, m_stra_series, m_stra_scatter):
         if len(data_table) > 0:
+            # first clear old series
+            m_env_temp_series.clear()
+            m_env_temp_scatter.clear()
+            m_kni_temp_series.clear()
+            m_kni_temp_scatter.clear()
+            m_rpa_series.clear()
+            m_rpa_scatter.clear()
+            m_stra_series.clear()
+            m_stra_scatter.clear()
             record_num = len(data_table[0])
             # 绘制温度曲线
             t_max = max(data_table[RUN_TIME])
             env_temp_max = max(data_table[ENV_TEMP])
             env_temp_min = min(data_table[ENV_TEMP])
-            self.m_temp1_chart.axisX().setRange(0, t_max)
-            self.m_temp1_chart.axisY().setRange(env_temp_min, env_temp_max)
-            self.m_temp1_series.clear()
+            self.m_env_temp_chart.axisX().setRange(0, max(t_max, self.m_env_temp_chart.axisX().max()))
+            lower = env_temp_min if self.m_env_temp_chart.axisY().min() == 0 else min(env_temp_min,
+                                                                                      self.m_env_temp_chart.axisY().min())
+            self.m_env_temp_chart.axisY().setRange(lower, max(env_temp_max, self.m_env_temp_chart.axisY().max()))
+            self.m_env_temp_series.clear()
             for i in range(0, record_num):
                 t = data_table[RUN_TIME][i]
                 temp1 = data_table[ENV_TEMP][i]
-                self.m_temp1_series.append(t, temp1)
-                self.m_temp1_scatter.append(t, temp1)
+                m_env_temp_series.append(t, temp1)
+                m_env_temp_scatter.append(t, temp1)
             # 绘制刀头温度曲线
             kni_temp_max = max(data_table[KNI_TEMP])
             kni_temp_min = min(data_table[KNI_TEMP])
-            self.m_kni_temp_chart.axisX().setRange(0, t_max)
-            self.m_kni_temp_chart.axisY().setRange(kni_temp_min, kni_temp_max)
-            self.m_kni_temp_series.clear()
+            self.m_kni_temp_chart.axisX().setRange(0, max(t_max, self.m_kni_temp_chart.axisX().max()))
+            lower = kni_temp_min if self.m_kni_temp_chart.axisY().min() == 0 else min(kni_temp_min,
+                                                                                      self.m_kni_temp_chart.axisY().min())
+            self.m_kni_temp_chart.axisY().setRange(lower, max(kni_temp_max, self.m_kni_temp_chart.axisY().max()))
+            m_kni_temp_series.clear()
             for i in range(0, record_num):
                 t = data_table[RUN_TIME][i]
                 temp2 = data_table[KNI_TEMP][i]
-                self.m_kni_temp_series.append(t, temp2)
-                self.m_kni_temp_scatter.append(t, temp2)
+                m_kni_temp_series.append(t, temp2)
+                m_kni_temp_scatter.append(t, temp2)
             # 绘制重复定位精度曲线
             rpa_data_list = data_table[RPA]
             rpa_max = max(rpa_data_list)
             rpa_min = min(rpa_data_list)
-            self.m_rpa_chart.axisX().setRange(0, t_max)
-            self.m_rpa_chart.axisY().setRange(rpa_min, rpa_max)
-            self.m_rpa_series.clear()
+            self.m_rpa_chart.axisX().setRange(0, max(t_max, self.m_rpa_chart.axisX().max()))
+            lower = rpa_min if self.m_rpa_chart.axisY().min() == 0 else min(rpa_min, self.m_rpa_chart.axisY().min())
+            self.m_rpa_chart.axisY().setRange(lower, max(rpa_max, self.m_rpa_chart.axisY().max()))
+            m_rpa_series.clear()
             for i in range(0, record_num):
                 t = data_table[RUN_TIME][i]
                 rpa = rpa_data_list[i]
-                self.m_rpa_series.append(t, rpa)
-                self.m_rpa_scatter.append(t, rpa)
+                m_rpa_series.append(t, rpa)
+                m_rpa_scatter.append(t, rpa)
             # 绘制温差曲线
             temp_gap_list = np.array(data_table[KNI_TEMP]) - np.array(data_table[ENV_TEMP])
             temp_gap_max = max(temp_gap_list)
             temp_gap_min = min(temp_gap_list)
-            self.m_stra_chart.axisX().setRange(0, t_max)
-            self.m_stra_chart.axisY().setRange(temp_gap_min, temp_gap_max)
-            self.m_stra_series.clear()
+            self.m_stra_chart.axisX().setRange(0, max(t_max, self.m_stra_chart.axisX().max()))
+            lower = temp_gap_min if self.m_stra_chart.axisY().min() == 0 else min(temp_gap_min,
+                                                                                  self.m_stra_chart.axisY().min())
+            self.m_stra_chart.axisY().setRange(lower, max(temp_gap_max, self.m_stra_chart.axisY().max()))
+            m_stra_series.clear()
             for i in range(0, record_num):
                 t = data_table[RUN_TIME][i]
                 temp_gap = temp_gap_list[i]
-                self.m_stra_series.append(t, temp_gap)
-                self.m_stra_scatter.append(t, temp_gap)
-
-    def read_maintain_data(self):
-        '''
-        读取维修数据
-        :return:
-        '''
-        maintain_times = []  # 保存读取数据
-        # 数据库查询
-        dev_id = self.ui.devWidget.item(2).text()
-        if dev_id.strip(' ') != '':
-            dev_id = int(dev_id)
-            sql_str = 'select maintain_time from maintain where dev_id = :dev_id'
-            self.query.prepare(sql_str)
-            self.query.bindValue(':dev_id', dev_id)
-            if not self.query.exec_():
-                print(self.query.lastError().text())
-            else:
-                while self.query.next():
-                    maintain_times.append(self.query.value(0))
-        return maintain_times
+                m_stra_series.append(t, temp_gap)
+                m_stra_scatter.append(t, temp_gap)
 
     @pyqtSlot()
     def on_loadButton_clicked(self):
@@ -836,6 +1070,15 @@ class MainWindow(QMainWindow):
                 return True
             else:
                 return False
+
+        def check_data_exist(data_table):
+            if len(data_table) <= 0 or (
+                    data_table['x_table'] == [[], [], [], []] and data_table['y_table'] == [[], [], [], []] and
+                    data_table['z_table'] == [[], [], [], []]):
+                flag = False
+            else:
+                flag = True
+            return flag
 
         temp_thresh = self.ui.tempEdit.text()
         rpa_thresh = self.ui.precEdit.text()
@@ -855,36 +1098,229 @@ class MainWindow(QMainWindow):
             return
         temp_thresh = float(temp_thresh)
         rpa_thresh = float(rpa_thresh)
-        self.data_table = self.read_raw_data()
-        if not self.data_table:
-            msg_box = QMessageBox(QMessageBox.Warning,
-                                  '提示',
-                                  '数据库无记录！',
-                                  QMessageBox.Ok)
-            msg_box.exec_()
-            return
-        else:
-            # ---原始数据可视化---
-            axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
-            if axis == 0:
-                self.plot_raw_data(self.data_table['x_table'])
-            elif axis == 1:
-                self.plot_raw_data(self.data_table['y_table'])
-            else:
-                self.plot_raw_data(self.data_table['z_table'])
-            # ---可靠性分析相关---
-            # 读取数据
-            fault_time = self.find_fault_time(self.data_table, temp_thresh, rpa_thresh)
-            if len(fault_time) <= 0: # 没有统计出故障，只需提示
-                msg_box = QMessageBox(QMessageBox.Information,
+        dev_1 = self.ui.devWidget.item(2).text()
+        dev_2 = self.ui.devWidget_2.item(2).text()
+        if dev_1.strip(' ') != '' and dev_2.strip(' ') == '':  # 只有设备1的数据
+            dev_1 = int(dev_1)
+            self.data_table_of_dev_1 = self.read_raw_data(dev_1)
+            if not check_data_exist(self.data_table_of_dev_1):
+                msg_box = QMessageBox(QMessageBox.Warning,
                                       '提示',
-                                      '设备无故障',
+                                      '数据库无记录！',
                                       QMessageBox.Ok)
                 msg_box.exec_()
+                return
             else:
-                rf.run_time_data = np.array(fault_time)
-                rf.run_time_prob = np.array([(i - 0.3) / (len(rf.run_time_data) + 0.4) for i in range(1, len(rf.run_time_data) + 1)])
-                self.plot_relia_charts()
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_1['y_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_1['z_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                # ---可靠性分析相关---
+                # 读取数据
+                fault_time = self.find_fault_time(self.data_table_of_dev_1, temp_thresh, rpa_thresh)
+                if len(fault_time) <= 0:  # 没有统计出故障，只需提示
+                    msg_box = QMessageBox(QMessageBox.Information,
+                                          '提示',
+                                          '设备无故障',
+                                          QMessageBox.Ok)
+                    msg_box.exec_()
+                else:
+                    run_time_data_1 = np.array(fault_time)
+
+                    self.plot_relia_charts(run_time_data_1, self.m_scatter_chart, self.m_scatter_series,
+                                           self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map,
+                                           self.m_cdf_chart, self.m_cdf_series_ls, self.m_cdf_series_map,
+                                           self.m_relia_chart, self.m_relia_series_ls, self.m_relia_series_map,
+                                           self.m_fail_chart, self.m_fail_series_ls, self.m_fail_series_map,
+                                           self.ui.dev1ResultWidget)
+        elif dev_1.strip(' ') == '' and dev_2.strip(' ') != '':
+            dev_2 = int(dev_2)
+            self.data_table_of_dev_2 = self.read_raw_data(dev_2)
+            if not check_data_exist(self.data_table_of_dev_2):
+                msg_box = QMessageBox(QMessageBox.Warning,
+                                      '提示',
+                                      '数据库无记录！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_2['x_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_2['y_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_2['z_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                # ---可靠性分析相关---
+                # 读取数据
+                fault_time = self.find_fault_time(self.data_table_of_dev_2, temp_thresh, rpa_thresh)
+                if len(fault_time) <= 0:  # 没有统计出故障，只需提示
+                    msg_box = QMessageBox(QMessageBox.Information,
+                                          '提示',
+                                          '设备无故障',
+                                          QMessageBox.Ok)
+                    msg_box.exec_()
+                else:
+                    run_time_data_2 = np.array(fault_time)
+                    self.plot_relia_charts(run_time_data_2, self.m_scatter_chart, self.m_scatter_series,
+                                           self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2,
+                                           self.m_cdf_chart, self.m_cdf_series_ls_2, self.m_cdf_series_map_2,
+                                           self.m_relia_chart, self.m_relia_series_ls_2, self.m_relia_series_map_2,
+                                           self.m_fail_chart, self.m_fail_series_ls_2, self.m_fail_series_map_2,
+                                           self.ui.dev2ResultWidget)
+        elif dev_1.strip(' ') != '' and dev_2.strip(' ') != '':
+            dev_1 = int(dev_1)
+            dev_2 = int(dev_2)
+            self.data_table_of_dev_1 = self.read_raw_data(dev_1)
+            self.data_table_of_dev_2 = self.read_raw_data(dev_2)
+            if not (check_data_exist(self.data_table_of_dev_1) or check_data_exist(self.data_table_of_dev_2)):
+                msg_box = QMessageBox(QMessageBox.Warning,
+                                      '提示',
+                                      '数据库无记录！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['x_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_1['y_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['y_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_1['z_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['z_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                # ---可靠性分析相关---
+                # 读取数据
+                fault_time_1 = self.find_fault_time(self.data_table_of_dev_1, temp_thresh, rpa_thresh)
+                fault_time_2 = self.find_fault_time(self.data_table_of_dev_2, temp_thresh, rpa_thresh)
+                if len(fault_time_2) <= 0 and len(fault_time_1) > 0:  # 没有统计出故障，只需提示
+                    msg_box = QMessageBox(QMessageBox.Information,
+                                          '提示',
+                                          '设备2无故障',
+                                          QMessageBox.Ok)
+                    msg_box.exec_()
+                    run_time_data_1 = np.array(fault_time_1)
+                    self.plot_relia_charts(run_time_data_1, self.m_scatter_chart, self.m_scatter_series,
+                                           self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map,
+                                           self.m_cdf_chart, self.m_cdf_series_ls, self.m_cdf_series_map,
+                                           self.m_relia_chart, self.m_relia_series_ls, self.m_relia_series_map,
+                                           self.m_fail_chart, self.m_fail_series_ls, self.m_fail_series_map,
+                                           self.ui.dev1ResultWidget)
+                elif len(fault_time_2) > 0 and len(fault_time_1) <= 0:
+                    msg_box = QMessageBox(QMessageBox.Information,
+                                          '提示',
+                                          '设备1无故障',
+                                          QMessageBox.Ok)
+                    msg_box.exec_()
+                    run_time_data_2 = np.array(fault_time_2)
+                    self.plot_relia_charts(run_time_data_2, self.m_scatter_chart, self.m_scatter_series_2,
+                                           self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2,
+                                           self.m_cdf_chart, self.m_cdf_series_ls_2, self.m_cdf_series_map_2,
+                                           self.m_relia_chart, self.m_relia_series_ls_2, self.m_relia_series_map_2,
+                                           self.m_fail_chart, self.m_fail_series_ls_2, self.m_fail_series_map_2,
+                                           self.ui.dev2ResultWidget)
+                elif len(fault_time_2) > 0 and len(fault_time_1) > 0:
+                    run_time_data_1 = np.array(fault_time_1)
+                    self.plot_relia_charts(run_time_data_1, self.m_scatter_chart, self.m_scatter_series,
+                                           self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map,
+                                           self.m_cdf_chart, self.m_cdf_series_ls, self.m_cdf_series_map,
+                                           self.m_relia_chart, self.m_relia_series_ls, self.m_relia_series_map,
+                                           self.m_fail_chart, self.m_fail_series_ls, self.m_fail_series_map,
+                                           self.ui.dev1ResultWidget)
+                    run_time_data_2 = np.array(fault_time_2)
+                    self.plot_relia_charts(run_time_data_2, self.m_scatter_chart, self.m_scatter_series_2,
+                                           self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2,
+                                           self.m_cdf_chart, self.m_cdf_series_ls_2, self.m_cdf_series_map_2,
+                                           self.m_relia_chart, self.m_relia_series_ls_2, self.m_relia_series_map_2,
+                                           self.m_fail_chart, self.m_fail_series_ls_2, self.m_fail_series_map_2,
+                                           self.ui.dev2ResultWidget)
+                    # 比较分析
+                    curr_time = max(np.max(run_time_data_1), np.max(run_time_data_2))
+                    lambda_hat_1 = float(self.ui.dev1ResultWidget.item(Result.lamda_value.value).text())
+                    beta_hat_1 = float(self.ui.dev1ResultWidget.item(Result.beta_value.value).text())
+                    lambda_hat_2 = float(self.ui.dev2ResultWidget.item(Result.lamda_value.value).text())
+                    beta_hat_2 = float(self.ui.dev2ResultWidget.item(Result.beta_value.value).text())
+                    relia_dev_1 = rf.reliability(lambda_hat_1, beta_hat_1, curr_time)
+                    relia_dev_2 = rf.reliability(lambda_hat_2, beta_hat_2, curr_time)
+                    fail_dev_1 = rf.failure_rate(lambda_hat_1, beta_hat_1, curr_time)
+                    fail_dev_2 = rf.failure_rate(lambda_hat_2, beta_hat_2, curr_time)
+                    mtbf_dev_1 = float(self.ui.dev1ResultWidget.item(Result.mtbf_value.value).text())
+                    mtbf_dev_2 = float(self.ui.dev2ResultWidget.item(Result.mtbf_value.value).text())
+                    self.ui.cmpResultWidget.item(2).setText('%d' % curr_time)
+                    if relia_dev_1 > relia_dev_2:
+                        op = '>'
+                    elif relia_dev_1 == relia_dev_2:
+                        op = '='
+                    else:
+                        op = '<'
+                    self.ui.cmpResultWidget.item(4).setText(
+                        '设备1({:.3f}) {} 设备2({:.3f})'.format(relia_dev_1, op, relia_dev_2))
+                    if fail_dev_1 > fail_dev_2:
+                        op = '>'
+                    elif fail_dev_1 == fail_dev_2:
+                        op = '='
+                    else:
+                        op = '<'
+                    self.ui.cmpResultWidget.item(6).setText(
+                        '设备1({:.3f}) {} 设备2({:.3f})'.format(fail_dev_1, op, fail_dev_2))
+                    if mtbf_dev_1 > mtbf_dev_2:
+                        op = '>'
+                    elif mtbf_dev_1 == mtbf_dev_2:
+                        op = '='
+                    else:
+                        op = '<'
+                    self.ui.cmpResultWidget.item(8).setText(
+                        '设备1({:.3f}) {} 设备2({:.3f})'.format(mtbf_dev_1, op, mtbf_dev_2))
+                else:
+                    msg_box = QMessageBox(QMessageBox.Information,
+                                          '提示',
+                                          '设备均无故障',
+                                          QMessageBox.Ok)
+                    msg_box.exec_()
+        else:
+            msg_box = QMessageBox(QMessageBox.Information,
+                                  '提示',
+                                  '请先选择设备！',
+                                  QMessageBox.Ok)
+            msg_box.exec_()
 
     # 可靠性分析页面按键事件
     @pyqtSlot()
@@ -944,48 +1380,6 @@ class MainWindow(QMainWindow):
             msg_box.exec_()
 
     @pyqtSlot()
-    def on_addDataButton_clicked(self):
-        dialog = AddDataDialog_1()
-        dialog.show()
-        if dialog.exec_():
-            run_time = float(dialog.get_run_time())
-            env_temp = float(dialog.get_env_temp())
-            kni_temp = float(dialog.get_kni_temp())
-            rpa = float(dialog.get_rpa())
-            axis = dialog.get_axis()
-            dev_id = self.ui.devWidget.item(2).text()
-            if dev_id.strip(' ') != '':
-                dev_id = int(dev_id)
-                insert_sql = 'insert into record(run_time, env_temp, kni_temp, rpa, axis, dev_id) values ' \
-                             '(:run_time, :env_temp, :kni_temp, :rpa, :axis, :dev_id)'
-                self.query.prepare(insert_sql)
-                self.query.bindValue(':run_time', run_time)
-                self.query.bindValue(':env_temp', env_temp)
-                self.query.bindValue(':kni_temp', kni_temp)
-                self.query.bindValue(':rpa', rpa)
-                self.query.bindValue(':axis', axis)
-                self.query.bindValue(':dev_id', dev_id)
-                if not self.query.exec_():
-                    msg_box = QMessageBox(QMessageBox.Warning,
-                                          '警告',
-                                          '添加失败！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-                else:
-                    msg_box = QMessageBox(QMessageBox.Information,
-                                          '提示',
-                                          '添加成功！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-            else:
-                msg_box = QMessageBox(QMessageBox.Information,
-                                      '提示',
-                                      '请选择设备！',
-                                      QMessageBox.Ok)
-                msg_box.exec_()
-        dialog.destroy()
-
-    @pyqtSlot()
     def on_outputDataButton_clicked(self):
         item_head = ['运行时间/h', '环境温度/℃', '刀头温度/℃', '重复定位精度/μm', '设备名称', '记录时间']
         wb = Workbook()
@@ -1029,112 +1423,315 @@ class MainWindow(QMainWindow):
                                   '保存成功',
                                   QMessageBox.Ok)
             msg_box.exec_()
+
+    @pyqtSlot()
+    def on_manaDevButton_clicked(self):
+        dev_widget = DeviceListWidget()
+        dev_widget.show()
+        dev_widget.exec_()
+        dev_widget.destroy()
+        self.initDevInfo()
+
+    @pyqtSlot()
+    def on_manaRecButton_clicked(self):
+        rec_widget = RecordListDialog()
+        rec_widget.show()
+        rec_widget.exec_()
+        rec_widget.destroy()
+
+    def read_maintain_data(self, dev_id):
+        '''
+        读取维修数据
+        :return:
+        '''
+        maintain_times = []  # 保存读取数据
+        # 数据库查询
+        sql_str = 'select maintain_time from maintain where dev_id = :dev_id'
+        self.query.prepare(sql_str)
+        self.query.bindValue(':dev_id', dev_id)
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+        else:
+            while self.query.next():
+                maintain_times.append(self.query.value(0))
+        return maintain_times
+
     # 维修性分析页面按键事件
+    def plot_maintain_charts(self, maintain_time_data, m_scatter_chart_maintain, m_scatter_series_maintain,
+                             m_pdf_chart_maintain, m_pdf_series_maintain_ls, m_pdf_series_maintain_map,
+                             m_cdf_chart_maintain, m_cdf_series_maintain_ls, m_cdf_series_maintain_map,
+                             m_relia_chart_maintain, m_relia_series_maintain_ls, m_relia_series_maintain_map,
+                             m_fail_chart_maintain, m_fail_series_maintain_ls, m_fail_series_maintain_map,
+                             resultWidget):
+        maintain_time_data = np.array(maintain_time_data)
+        t_max = max(maintain_time_data)
+        t_range = np.arange(1, t_max, 1)
+        maintain_time_prob = np.array(
+            [(i - 0.3) / (len(maintain_time_data) + 0.4) for i in range(1, len(maintain_time_data) + 1)])
+        # 绘制散点图
+        m_scatter_series_maintain.clear()
+        for t, prob in zip(maintain_time_data, maintain_time_prob):
+            m_scatter_series_maintain.append(t, prob)
+        # 重新设定x轴范围
+        m_scatter_chart_maintain.axisX().setRange(0, max(t_max, m_scatter_chart_maintain.axisX().max()))
+        m_pdf_chart_maintain.axisX().setRange(0, max(t_max, m_pdf_chart_maintain.axisX().max()))
+        m_cdf_chart_maintain.axisX().setRange(0, max(t_max, m_cdf_chart_maintain.axisX().max()))
+        m_relia_chart_maintain.axisX().setRange(0, max(t_max, m_relia_chart_maintain.axisX().max()))
+        m_fail_chart_maintain.axisX().setRange(0, max(t_max, m_fail_chart_maintain.axisX().max()))
+        ## 以下是最小二乘法计算
+        lambda_hat_mt, beta_hat_mt, pdf_prob_ls_mt, cdf_prob_ls_mt, relia_prob_ls_mt, fail_prob_ls_mt = self.compute_curves(
+            maintain_time_data, method=0)
+        lambda_map_mt, beta_map_mt, pdf_prob_map_mt, cdf_prob_map_mt, relia_prob_map_mt, fail_prob_map_mt = self.compute_curves(
+            maintain_time_data, method=1)
+        # 保存全局变量
+        if m_pdf_series_maintain_ls == self.m_pdf_series_maintain_ls:
+            self.lambda_hat_mt_1, self.beta_hat_mt_1 = lambda_hat_mt, beta_hat_mt
+        else:
+            self.lambda_hat_mt_2, self.beta_hat_mt_2 = lambda_hat_mt, beta_hat_mt
+        if m_pdf_series_maintain_map == self.m_pdf_series_maintain_map:
+            self.lambda_map_mt_1, self.beta_map_mt_1 = lambda_map_mt, beta_map_mt
+        else:
+            self.lambda_map_mt_2, self.beta_map_mt_2 = lambda_map_mt, beta_map_mt
+        # 重新设定y轴范围
+        m_pdf_chart_maintain.axisY().setRange(0, max(np.max(pdf_prob_ls_mt), np.max(pdf_prob_map_mt),
+                                                     m_pdf_chart_maintain.axisY().max()))
+        m_cdf_chart_maintain.axisY().setRange(0, max(np.max(cdf_prob_ls_mt), np.max(cdf_prob_map_mt),
+                                                     m_cdf_chart_maintain.axisY().max()))
+        m_relia_chart_maintain.axisY().setRange(0, max(np.max(relia_prob_ls_mt), np.max(relia_prob_map_mt),
+                                                       m_relia_chart_maintain.axisY().max()))
+        m_fail_chart_maintain.axisY().setRange(0, max(np.max(fail_prob_ls_mt), np.max(fail_prob_map_mt),
+                                                      m_fail_chart_maintain.axisY().max()))
+        method = self.ui.comboBox_2.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
+        if method == 0:
+            m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_map)
+            m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_map)
+            m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_map)
+            m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_map)
+
+            m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_map_2)
+            m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_map_2)
+            m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_map_2)
+            m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_map_2)
+            # 填充表格
+            resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_hat_mt)
+            resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_hat_mt)
+            resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat_mt, beta_hat_mt))
+        else:
+            m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_ls)
+            m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_ls)
+            m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_ls)
+            m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_ls)
+
+            m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_ls_2)
+            m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_ls_2)
+            m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_ls_2)
+            m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_ls_2)
+            # 填充表格
+            resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_map_mt)
+            resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_map_mt)
+            resultWidget.item(Result.mtbf_value.value).setText(
+                '%.4f' % rf.mtbf(lambda_map_mt, beta_map_mt))
+        # 绘制概率密度曲线
+        m_pdf_series_maintain_ls.clear()
+        for t, prob in zip(t_range, pdf_prob_ls_mt):
+            m_pdf_series_maintain_ls.append(t, prob)
+        # 绘制累积分布曲线
+        m_cdf_series_maintain_ls.clear()
+        for t, prob in zip(t_range, cdf_prob_ls_mt):
+            m_cdf_series_maintain_ls.append(t, prob)
+        # 绘制可靠度曲线
+        m_relia_series_maintain_ls.clear()
+        for t, prob in zip(t_range, relia_prob_ls_mt):
+            m_relia_series_maintain_ls.append(t, prob)
+        # 绘制失效率曲线
+        m_fail_series_maintain_ls.clear()
+        for t, prob in zip(t_range, fail_prob_ls_mt):
+            m_fail_series_maintain_ls.append(t, prob)
+        # 绘制概率密度曲线
+        m_pdf_series_maintain_map.clear()
+        for t, prob in zip(t_range, pdf_prob_map_mt):
+            m_pdf_series_maintain_map.append(t, prob)
+        # 绘制累积分布曲线
+        m_cdf_series_maintain_map.clear()
+        for t, prob in zip(t_range, cdf_prob_map_mt):
+            m_cdf_series_maintain_map.append(t, prob)
+        # 绘制可靠度曲线
+        m_relia_series_maintain_map.clear()
+        for t, prob in zip(t_range, relia_prob_map_mt):
+            m_relia_series_maintain_map.append(t, prob)
+        # 绘制失效率曲线
+        m_fail_series_maintain_map.clear()
+        for t, prob in zip(t_range, fail_prob_map_mt):
+            m_fail_series_maintain_map.append(t, prob)
+
     @pyqtSlot()
     def on_loadButton_2_clicked(self):
-        maintain_time = self.read_maintain_data()
-        if len(maintain_time) <= 0:
-            msg_box = QMessageBox(QMessageBox.Information,
-                                  '提示',
-                                  '无维修数据',
-                                  QMessageBox.Ok)
-            msg_box.exec_()
-            return
-        else:
-            #---维修性分析相关---
-            rf.maintain_time_data = np.array(maintain_time)
-            rf.maintain_time_prob = np.array([(i - 0.3) / (len(rf.maintain_time_data) + 0.4) for i in range(1, len(rf.maintain_time_data) + 1)])
-            # 绘制散点图
-            for t, prob in zip(rf.maintain_time_data, rf.maintain_time_prob):
-                self.m_scatter_series_2.append(t, prob)
-            # 重新设定x轴范围
-            t_max = max(rf.maintain_time_data)
-            self.m_scatter_chart_2.axisX().setRange(0, t_max)
-            self.m_pdf_chart_2.axisX().setRange(0, t_max)
-            self.m_cdf_chart_2.axisX().setRange(0, t_max)
-            self.m_relia_chart_2.axisX().setRange(0, t_max)
-            self.m_fail_chart_2.axisX().setRange(0, t_max)
-            ## 以下是最小二乘法计算
-            lambda_hat_2, beta_hat_2, beta_std_2 = estimate.least_square(rf.maintain_time_data)
-            # 将全局变量传给function模块
-            rf.mu_2, rf.sigma_2 = beta_hat_2, beta_std_2
-            self.lambda_hat_2, self.beta_hat_2 = lambda_hat_2, beta_hat_2
-            t_range = np.arange(1, t_max, 1)
-            # 计算概率密度曲线
-            pdf_prob_ls_2 = rf.Weibull_pdf(lambda_hat_2, beta_hat_2, t_range)
-            # 计算累积分布曲线
-            cdf_prob_ls_2 = rf.Weibull_cdf(lambda_hat_2, beta_hat_2, t_range)
-            # 计算可靠度曲线
-            relia_prob_ls_2 = rf.reliability(lambda_hat_2, beta_hat_2, t_range)
-            # 计算失效率曲线
-            fail_prob_ls_2 = rf.failure_rate(lambda_hat_2, beta_hat_2, t_range)
-            ## 以下是极大后验估计法计算
-            lambda_map_2, beta_map_2 = estimate.map_estimate_2([lambda_hat_2, beta_hat_2])
-            self.lambda_map_2, self.beta_map_2 = lambda_map_2, beta_map_2
-            # 计算概率密度曲线
-            pdf_prob_map_2 = rf.Weibull_pdf(lambda_map_2, beta_map_2, t_range)
-            # 计算累积分布曲线
-            cdf_prob_map_2 = rf.Weibull_cdf(lambda_map_2, beta_map_2, t_range)
-            # 计算可靠度曲线
-            relia_prob_map_2 = rf.reliability(lambda_map_2, beta_map_2, t_range)
-            # 计算失效率曲线
-            fail_prob_map_2 = rf.failure_rate(lambda_map_2, beta_map_2, t_range)
-            # 重新设定y轴范围
-            self.m_pdf_chart_2.axisY().setRange(0, max(pdf_prob_ls_2))
-            self.m_cdf_chart_2.axisY().setRange(0, max(cdf_prob_ls_2))
-            self.m_relia_chart_2.axisY().setRange(0, max(relia_prob_ls_2))
-            self.m_fail_chart_2.axisY().setRange(0, max(fail_prob_ls_2))
-            method = self.ui.comboBox_2.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
-            if method == 0:
-                self.m_pdf_chart_2.removeSeries(self.m_pdf_series_2_map)
-                self.m_cdf_chart_2.removeSeries(self.m_cdf_series_2_map)
-                self.m_relia_chart_2.removeSeries(self.m_relia_series_2_map)
-                self.m_fail_chart_2.removeSeries(self.m_fail_series_2_map)
-                # 填充表格
-                self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % lambda_hat_2)
-                self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % beta_hat_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat_2, beta_hat_2))
+        dev_1 = self.ui.devWidget.item(2).text()
+        dev_2 = self.ui.devWidget_2.item(2).text()
+        if dev_1.strip(' ') != '' and dev_2.strip(' ') == '':  # 只有设备1的数据
+            dev_1 = int(dev_1)
+            maintain_time_of_dev_1 = self.read_maintain_data(dev_1)
+            if len(maintain_time_of_dev_1) <= 0:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '无维修数据',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
             else:
-                self.m_pdf_chart_2.removeSeries(self.m_pdf_series_2_ls)
-                self.m_cdf_chart_2.removeSeries(self.m_cdf_series_2_ls)
-                self.m_relia_chart_2.removeSeries(self.m_relia_series_2_ls)
-                self.m_fail_chart_2.removeSeries(self.m_fail_series_2_ls)
-                # 填充表格
-                self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % lambda_map_2)
-                self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % beta_map_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_map_2, beta_map_2))
-            # 绘制概率密度曲线
-            self.m_pdf_series_2_ls.clear()
-            for t, prob in zip(t_range, pdf_prob_ls_2):
-                self.m_pdf_series_2_ls.append(t, prob)
-            # 绘制累积分布曲线
-            self.m_cdf_series_2_ls.clear()
-            for t, prob in zip(t_range, cdf_prob_ls_2):
-                self.m_cdf_series_2_ls.append(t, prob)
-            # 绘制可靠度曲线
-            self.m_relia_series_2_ls.clear()
-            for t, prob in zip(t_range, relia_prob_ls_2):
-                self.m_relia_series_2_ls.append(t, prob)
-            # 绘制失效率曲线
-            self.m_fail_series_2_ls.clear()
-            for t, prob in zip(t_range, fail_prob_ls_2):
-                self.m_fail_series_2_ls.append(t, prob)
-            # 绘制概率密度曲线
-            self.m_pdf_series_2_map.clear()
-            for t, prob in zip(t_range, pdf_prob_map_2):
-                self.m_pdf_series_2_map.append(t, prob)
-            # 绘制累积分布曲线
-            self.m_cdf_series_2_map.clear()
-            for t, prob in zip(t_range, cdf_prob_map_2):
-                self.m_cdf_series_2_map.append(t, prob)
-            # 绘制可靠度曲线
-            self.m_relia_series_2_map.clear()
-            for t, prob in zip(t_range, relia_prob_map_2):
-                self.m_relia_series_2_map.append(t, prob)
-            # 绘制失效率曲线
-            self.m_fail_series_2_map.clear()
-            for t, prob in zip(t_range, fail_prob_map_2):
-                self.m_fail_series_2_map.append(t, prob)
+                # ---维修性分析相关---
+                self.plot_maintain_charts(maintain_time_of_dev_1, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls,
+                                          self.m_pdf_series_maintain_map,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls,
+                                          self.m_cdf_series_maintain_map,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls,
+                                          self.m_relia_series_maintain_map,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls,
+                                          self.m_fail_series_maintain_map,
+                                          self.ui.dev1MtResultWidget)
+        elif dev_1.strip(' ') == '' and dev_2.strip(' ') != '':  # 只有设备2的数据
+            dev_2 = int(dev_2)
+            maintain_time_of_dev_2 = self.read_maintain_data(dev_2)
+            if len(maintain_time_of_dev_2) <= 0:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '无维修数据',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---维修性分析相关---
+                self.plot_maintain_charts(maintain_time_of_dev_2, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain_2,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls_2,
+                                          self.m_pdf_series_maintain_map_2,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls_2,
+                                          self.m_cdf_series_maintain_map_2,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls_2,
+                                          self.m_relia_series_maintain_map_2,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls_2,
+                                          self.m_fail_series_maintain_map_2,
+                                          self.ui.dev2MtResultWidget)
+        elif dev_1.strip(' ') != '' and dev_2.strip(' ') != '':
+            dev_1 = int(dev_1)
+            dev_2 = int(dev_2)
+            maintain_time_of_dev_1 = self.read_maintain_data(dev_1)
+            maintain_time_of_dev_2 = self.read_maintain_data(dev_2)
+            if len(maintain_time_of_dev_1) <= 0 and len(maintain_time_of_dev_2) > 0:  # 只有设备2有数据
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '设备1无维修数据',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                self.plot_maintain_charts(maintain_time_of_dev_2, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain_2,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls_2,
+                                          self.m_pdf_series_maintain_map_2,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls_2,
+                                          self.m_cdf_series_maintain_map_2,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls_2,
+                                          self.m_relia_series_maintain_map_2,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls_2,
+                                          self.m_fail_series_maintain_map_2,
+                                          self.ui.dev2MtResultWidget)
+                return
+            elif len(maintain_time_of_dev_1) > 0 and len(maintain_time_of_dev_2) <= 0:  # 只有设备1有数据:
+                # ---维修性分析相关---
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '设备2无维修数据',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                self.plot_maintain_charts(maintain_time_of_dev_1, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls,
+                                          self.m_pdf_series_maintain_map,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls,
+                                          self.m_cdf_series_maintain_map,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls,
+                                          self.m_relia_series_maintain_map,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls,
+                                          self.m_fail_series_maintain_map,
+                                          self.ui.dev1MtResultWidget)
+            elif len(maintain_time_of_dev_1) > 0 and len(maintain_time_of_dev_2) > 0:
+                self.plot_maintain_charts(maintain_time_of_dev_1, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls,
+                                          self.m_pdf_series_maintain_map,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls,
+                                          self.m_cdf_series_maintain_map,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls,
+                                          self.m_relia_series_maintain_map,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls,
+                                          self.m_fail_series_maintain_map,
+                                          self.ui.dev1MtResultWidget)
+                self.plot_maintain_charts(maintain_time_of_dev_2, self.m_scatter_chart_maintain,
+                                          self.m_scatter_series_maintain_2,
+                                          self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls_2,
+                                          self.m_pdf_series_maintain_map_2,
+                                          self.m_cdf_chart_maintain, self.m_cdf_series_maintain_ls_2,
+                                          self.m_cdf_series_maintain_map_2,
+                                          self.m_relia_chart_maintain, self.m_relia_series_maintain_ls_2,
+                                          self.m_relia_series_maintain_map_2,
+                                          self.m_fail_chart_maintain, self.m_fail_series_maintain_ls_2,
+                                          self.m_fail_series_maintain_map_2,
+                                          self.ui.dev2MtResultWidget)
+                # 比较分析
+                curr_time = max(np.max(maintain_time_of_dev_1), np.max(maintain_time_of_dev_2))
+                lambda_hat_1 = float(self.ui.dev1MtResultWidget.item(Result.lamda_value.value).text())
+                beta_hat_1 = float(self.ui.dev1MtResultWidget.item(Result.beta_value.value).text())
+                lambda_hat_2 = float(self.ui.dev2MtResultWidget.item(Result.lamda_value.value).text())
+                beta_hat_2 = float(self.ui.dev2MtResultWidget.item(Result.beta_value.value).text())
+                relia_dev_1 = rf.reliability(lambda_hat_1, beta_hat_1, curr_time)
+                relia_dev_2 = rf.reliability(lambda_hat_2, beta_hat_2, curr_time)
+                fail_dev_1 = rf.failure_rate(lambda_hat_1, beta_hat_1, curr_time)
+                fail_dev_2 = rf.failure_rate(lambda_hat_2, beta_hat_2, curr_time)
+                mtbf_dev_1 = float(self.ui.dev1MtResultWidget.item(Result.mtbf_value.value).text())
+                mtbf_dev_2 = float(self.ui.dev2MtResultWidget.item(Result.mtbf_value.value).text())
+                self.ui.cmpMtResultWidget.item(2).setText('%d' % curr_time)
+                if relia_dev_1 > relia_dev_2:
+                    op = '>'
+                elif relia_dev_1 == relia_dev_2:
+                    op = '='
+                else:
+                    op = '<'
+                self.ui.cmpMtResultWidget.item(4).setText(
+                    '设备1({:.3f}) {} 设备2({:.3f})'.format(relia_dev_1, op, relia_dev_2))
+                if fail_dev_1 > fail_dev_2:
+                    op = '>'
+                elif fail_dev_1 == fail_dev_2:
+                    op = '='
+                else:
+                    op = '<'
+                self.ui.cmpMtResultWidget.item(6).setText(
+                    '设备1({:.3f}) {} 设备2({:.3f})'.format(fail_dev_1, op, fail_dev_2))
+                if mtbf_dev_1 > mtbf_dev_2:
+                    op = '>'
+                elif mtbf_dev_1 == mtbf_dev_2:
+                    op = '='
+                else:
+                    op = '<'
+                self.ui.cmpMtResultWidget.item(8).setText(
+                    '设备1({:.3f}) {} 设备2({:.3f})'.format(mtbf_dev_1, op, mtbf_dev_2))
+            else:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '均无维修数据',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+        else:
+            pass
+
+    @pyqtSlot()
+    def on_nextMtResultButton_clicked(self):
+        page_num = self.ui.mtResultWidget.count()
+        index = self.ui.mtResultWidget.currentIndex()
+        index += 1
+        if index == page_num:
+            index = 0
+        self.ui.mtResultWidget.setCurrentIndex(index)
 
     @pyqtSlot()
     def on_scatterButton_2_clicked(self):
@@ -1160,6 +1757,7 @@ class MainWindow(QMainWindow):
         maintain_sheet.append([self.ui.resultWidget_2.item(2 * i + 1).text() for i in range(0, len(item_head))])
         # 保存文档
         wb.save(filename)
+
     @pyqtSlot()
     def on_saveButton_2_clicked(self):
         save_dir = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
@@ -1207,6 +1805,7 @@ class MainWindow(QMainWindow):
                                   '保存成功',
                                   QMessageBox.Ok)
             msg_box.exec_()
+
     def read_fault_data(self):
         '''
         读取故障数据
@@ -1236,8 +1835,10 @@ class MainWindow(QMainWindow):
                     posis.append(self.query.value(1))
                     reasons.append(self.query.value(2))
                     roots.append(self.query.value(3))
-                whole_table.append(patts);whole_table.append(posis)
-                whole_table.append(reasons);whole_table.append(roots)
+                whole_table.append(patts);
+                whole_table.append(posis)
+                whole_table.append(reasons);
+                whole_table.append(roots)
                 # 整机
                 subsys_table = []
                 patts, posis, reasons, roots = [], [], [], []
@@ -1255,8 +1856,10 @@ class MainWindow(QMainWindow):
                         posis.append(self.query.value(1))
                         reasons.append(self.query.value(2))
                         roots.append(self.query.value(3))
-                    subsys_table.append(patts);subsys_table.append(posis)
-                    subsys_table.append(reasons);subsys_table.append(roots)
+                    subsys_table.append(patts);
+                    subsys_table.append(posis)
+                    subsys_table.append(reasons);
+                    subsys_table.append(roots)
                 data_table['whole'] = whole_table
                 data_table['subsys'] = subsys_table
         return data_table
@@ -1317,8 +1920,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(patt_set)
         self.m_patt_chart.axisY().setRange(0, max(patt_prob))
         # 设置柱状集
@@ -1338,8 +1941,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(posi_set)
         self.m_posi_chart.axisY().setRange(0, max(posi_prob))
         # 设置柱状集
@@ -1359,8 +1962,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(reason_set)
         self.m_reason_chart.axisY().setRange(0, max(reason_prob))
         # 设置柱状集
@@ -1380,8 +1983,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(root_set)
         self.m_root_chart.axisY().setRange(0, max(root_prob))
         # 设置柱状集
@@ -1414,8 +2017,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(patt_set)
         self.m_patt_chart_2.axisY().setRange(0, max(patt_prob))
         # 设置柱状集
@@ -1435,8 +2038,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(posi_set)
         self.m_posi_chart_2.axisY().setRange(0, max(posi_prob))
         # 设置柱状集
@@ -1456,8 +2059,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(reason_set)
         self.m_reason_chart_2.axisY().setRange(0, max(reason_prob))
         # 设置柱状集
@@ -1477,8 +2080,8 @@ class MainWindow(QMainWindow):
             bar_set.append(prob)
         # 定义横坐标轴
         axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 15))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 13))  # 设置横坐标刻度的字体类型和大小
+        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
         axisX.append(root_set)
         self.m_root_chart_2.axisY().setRange(0, max(root_prob))
         # 设置柱状集
@@ -1498,42 +2101,12 @@ class MainWindow(QMainWindow):
             setText(root_set[root_prob.index(max(root_prob))])
 
     @pyqtSlot()
-    def on_addDataButton_2_clicked(self):
-        dialog = AddDataDialog_2()
-        dialog.show()
-        if dialog.exec_():
-            maintain_date = dialog.get_maintain_date()
-            person = dialog.get_maintain_person()
-            maintain_time = float(dialog.get_maintain_time())
-            dev_id = self.ui.devWidget.item(2).text()
-            if dev_id.strip(' ') != '':
-                dev_id = int(dev_id)
-                insert_sql = 'insert into maintain (maintain_date, person, maintain_time, dev_id) values ' \
-                             '(:maintain_date, :person, :maintain_time, :dev_id)'
-                self.query.prepare(insert_sql)
-                self.query.bindValue(':maintain_date', maintain_date)
-                self.query.bindValue(':person', person)
-                self.query.bindValue(':maintain_time', maintain_time)
-                self.query.bindValue(':dev_id', dev_id)
-                if not self.query.exec_():
-                    msg_box = QMessageBox(QMessageBox.Warning,
-                                          '警告',
-                                          '添加失败！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-                else:
-                    msg_box = QMessageBox(QMessageBox.Information,
-                                          '提示',
-                                          '添加成功！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-            else:
-                msg_box = QMessageBox(QMessageBox.Information,
-                                      '提示',
-                                      '请选择设备！',
-                                      QMessageBox.Ok)
-                msg_box.exec_()
-        dialog.destroy()
+    def on_manaMtRecButton_clicked(self):
+        mt_widget = MaintainListDialog()
+        mt_widget.show()
+        mt_widget.exec_()
+        mt_widget.destroy()
+
     # 故障分析页面响应事件
     @pyqtSlot()
     def on_loadButton_3_clicked(self):
@@ -1580,6 +2153,7 @@ class MainWindow(QMainWindow):
         subsys_sheet.append([self.ui.resultWidget_4.item(2 * i + 1).text() for i in range(0, len(item_head))])
         # 保存文档
         wb.save(filename)
+
     @pyqtSlot()
     def on_saveButton_3_clicked(self):
         save_dir = QFileDialog.getExistingDirectory(self, '选择文件夹', './')
@@ -1688,189 +2262,445 @@ class MainWindow(QMainWindow):
                                       QMessageBox.Ok)
                 msg_box.exec_()
         dialog.destroy()
+
+    @pyqtSlot()
+    def on_nextResultButton_clicked(self):
+        page_num = self.ui.reliaResultWidget.count()
+        index = self.ui.reliaResultWidget.currentIndex()
+        index += 1
+        if index == page_num:
+            index = 0
+        self.ui.reliaResultWidget.setCurrentIndex(index)
+
     def on_comboBox_currentIndexChanged(self):
-        method = self.ui.comboBox.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
-        if self.lambda_hat >= 0 and self.beta_hat >= 0:
+        def check_not_nan(lambda_hat, beta_hat):
+            flag = False
+            if lambda_hat.strip(' ') != '' and beta_hat.strip(' ') != '':
+                flag = True
+            return flag
+
+        def switch_algorithm(lambda_hat, beta_hat, lambda_map, beta_map, method, m_pdf_chart, m_pdf_series_ls,
+                             m_pdf_series_map, m_cdf_chart, m_cdf_series_ls, m_cdf_series_map, m_relia_chart,
+                             m_relia_series_ls, m_relia_series_map, m_fail_chart, m_fail_series_ls, m_fail_series_map,
+                             resultWidget):
             if method == 0:
-                self.m_pdf_chart.addSeries(self.m_pdf_series_ls)
-                self.m_cdf_chart.addSeries(self.m_cdf_series_ls)
-                self.m_relia_chart.addSeries(self.m_relia_series_ls)
-                self.m_fail_chart.addSeries(self.m_fail_series_ls)
-                self.m_pdf_chart.removeSeries(self.m_pdf_series_map)
-                self.m_cdf_chart.removeSeries(self.m_cdf_series_map)
-                self.m_relia_chart.removeSeries(self.m_relia_series_map)
-                self.m_fail_chart.removeSeries(self.m_fail_series_map)
+                m_pdf_chart.addSeries(m_pdf_series_ls)
+                m_cdf_chart.addSeries(m_cdf_series_ls)
+                m_relia_chart.addSeries(m_relia_series_ls)
+                m_fail_chart.addSeries(m_fail_series_ls)
+
+                m_pdf_chart.removeSeries(m_pdf_series_map)
+                m_cdf_chart.removeSeries(m_cdf_series_map)
+                m_relia_chart.removeSeries(m_relia_series_map)
+                m_fail_chart.removeSeries(m_fail_series_map)
+
                 # 填充表格
-                self.ui.resultWidget.item(Result.lamda_value.value).setText('%.4f' % self.lambda_hat)
-                self.ui.resultWidget.item(Result.beta_value.value).setText('%.4f' % self.beta_hat)
-                self.ui.resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(self.lambda_hat, self.beta_hat))
+                resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_hat)
+                resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_hat)
+                resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat, beta_hat))
             else:
-                self.m_pdf_chart.addSeries(self.m_pdf_series_map)
-                self.m_cdf_chart.addSeries(self.m_cdf_series_map)
-                self.m_relia_chart.addSeries(self.m_relia_series_map)
-                self.m_fail_chart.addSeries(self.m_fail_series_map)
-                self.m_pdf_chart.removeSeries(self.m_pdf_series_ls)
-                self.m_cdf_chart.removeSeries(self.m_cdf_series_ls)
-                self.m_relia_chart.removeSeries(self.m_relia_series_ls)
-                self.m_fail_chart.removeSeries(self.m_fail_series_ls)
+                m_pdf_chart.addSeries(m_pdf_series_map)
+                m_cdf_chart.addSeries(m_cdf_series_map)
+                m_relia_chart.addSeries(m_relia_series_map)
+                m_fail_chart.addSeries(m_fail_series_map)
+
+                m_pdf_chart.removeSeries(m_pdf_series_ls)
+                m_cdf_chart.removeSeries(m_cdf_series_ls)
+                m_relia_chart.removeSeries(m_relia_series_ls)
+                m_fail_chart.removeSeries(m_fail_series_ls)
                 # 填充表格
-                self.ui.resultWidget.item(Result.lamda_value.value).setText('%.4f' % self.lambda_map)
-                self.ui.resultWidget.item(Result.beta_value.value).setText('%.4f' % self.beta_map)
-                self.ui.resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(self.lambda_map, self.beta_map))
+                resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_map)
+                resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_map)
+                resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_map, beta_map))
+
+        method = self.ui.comboBox.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
+        lambda_hat_1, beta_hat_1 = self.ui.dev1ResultWidget.item(
+            Result.lamda_value.value).text(), self.ui.dev1ResultWidget.item(Result.beta_value.value).text()
+        lambda_hat_2, beta_hat_2 = self.ui.dev2ResultWidget.item(
+            Result.lamda_value.value).text(), self.ui.dev2ResultWidget.item(Result.beta_value.value).text()
+
+        if check_not_nan(lambda_hat_1, beta_hat_1) and (not check_not_nan(lambda_hat_2, beta_hat_2)):
+            switch_algorithm(self.lambda_hat_1, self.beta_hat_1, self.lambda_map_1, self.beta_map_1, method,
+                             self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map, self.m_cdf_chart,
+                             self.m_cdf_series_ls, self.m_cdf_series_map, self.m_relia_chart, self.m_relia_series_ls,
+                             self.m_relia_series_map, self.m_fail_chart, self.m_fail_series_ls,
+                             self.m_fail_series_map, self.ui.dev1ResultWidget)
+        elif (not check_not_nan(lambda_hat_1, beta_hat_1)) and check_not_nan(lambda_hat_2, beta_hat_2):
+            switch_algorithm(self.lambda_hat_2, self.beta_hat_2, self.lambda_map_2, self.beta_map_2, method,
+                             self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2, self.m_cdf_chart,
+                             self.m_cdf_series_ls_2, self.m_cdf_series_map_2, self.m_relia_chart,
+                             self.m_relia_series_ls_2,
+                             self.m_relia_series_map_2, self.m_fail_chart, self.m_fail_series_ls_2,
+                             self.m_fail_series_map_2, self.ui.dev2ResultWidget)
+        elif check_not_nan(lambda_hat_1, beta_hat_1) and check_not_nan(lambda_hat_2, beta_hat_2):
+            switch_algorithm(self.lambda_hat_1, self.beta_hat_1, self.lambda_map_1, self.beta_map_1, method,
+                             self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map, self.m_cdf_chart,
+                             self.m_cdf_series_ls, self.m_cdf_series_map, self.m_relia_chart, self.m_relia_series_ls,
+                             self.m_relia_series_map, self.m_fail_chart, self.m_fail_series_ls,
+                             self.m_fail_series_map, self.ui.dev1ResultWidget)
+            switch_algorithm(self.lambda_hat_2, self.beta_hat_2, self.lambda_map_2, self.beta_map_2, method,
+                             self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2, self.m_cdf_chart,
+                             self.m_cdf_series_ls_2, self.m_cdf_series_map_2, self.m_relia_chart,
+                             self.m_relia_series_ls_2,
+                             self.m_relia_series_map_2, self.m_fail_chart, self.m_fail_series_ls_2,
+                             self.m_fail_series_map_2, self.ui.dev2ResultWidget)
+        else:
+            pass
+
+    def on_axisComboBox_currentIndexChanged(self):
+        def check_data_exist(data_table):
+            if len(data_table) <= 0 or (
+                    data_table['x_table'] == [[], [], [], []] and data_table['y_table'] == [[], [], [], []] and
+                    data_table['z_table'] == [[], [], [], []]):
+                flag = False
+            else:
+                flag = True
+            return flag
+
+        dev_1 = self.ui.devWidget.item(2).text()
+        dev_2 = self.ui.devWidget_2.item(2).text()
+        if dev_1.strip(' ') != '' and dev_2.strip(' ') == '':
+            if not check_data_exist(self.data_table_of_dev_1):
+                msg_box = QMessageBox(QMessageBox.Warning,
+                                      '提示',
+                                      '数据库无记录！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_1['y_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_1['z_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+        elif dev_1.strip(' ') == '' and dev_2.strip(' ') != '':
+            if not check_data_exist(self.data_table_of_dev_2):
+                msg_box = QMessageBox(QMessageBox.Warning,
+                                      '提示',
+                                      '数据库无记录！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_2['x_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_2['y_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_2['z_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+        elif dev_1.strip(' ') != '' and dev_2.strip(' ') != '':
+            if not (check_data_exist(self.data_table_of_dev_1) or check_data_exist(self.data_table_of_dev_2)):
+                msg_box = QMessageBox(QMessageBox.Warning,
+                                      '提示',
+                                      '数据库无记录！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                return
+            else:
+                # ---原始数据可视化---
+                axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
+                if axis == 0:
+                    self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['x_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                elif axis == 1:
+                    self.plot_raw_data(self.data_table_of_dev_1['y_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['y_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+                else:
+                    self.plot_raw_data(self.data_table_of_dev_1['z_table'], self.m_env_temp_series,
+                                       self.m_env_temp_scatter, self.m_kni_temp_series, self.m_kni_temp_scatter,
+                                       self.m_rpa_series, self.m_rpa_scatter, self.m_stra_series, self.m_stra_scatter)
+                    self.plot_raw_data(self.data_table_of_dev_2['z_table'], self.m_env_temp_series_2,
+                                       self.m_env_temp_scatter_2, self.m_kni_temp_series_2, self.m_kni_temp_scatter_2,
+                                       self.m_rpa_series_2, self.m_rpa_scatter_2, self.m_stra_series_2,
+                                       self.m_stra_scatter_2)
+        else:
+            pass
 
     def on_devComboBox_currentIndexChanged(self):
         dev_name = self.ui.devComboBox.currentText()
-        query_sql = 'select id, num, name from device where name = :name'
-        self.query.prepare(query_sql)
-        self.query.bindValue(':name', dev_name)
-        if not self.query.exec_():
-            print(self.query.lastError())
-        else:
-            while self.query.next():
-                id = self.query.value(0)
-                num = self.query.value(1)
-                name = self.query.value(2)
-                self.ui.devWidget.item(2).setText(str(id))
-                self.ui.devWidget.item(4).setText(str(num))
-                self.ui.devWidget.item(6).setText(str(name))
+        if dev_name != '选择设备':
+            query_sql = 'select id, num, name from device where name = :name'
+            self.query.prepare(query_sql)
+            self.query.bindValue(':name', dev_name)
+            if not self.query.exec_():
+                print(self.query.lastError())
+            else:
+                while self.query.next():
+                    id = self.query.value(0)
+                    num = self.query.value(1)
+                    name = self.query.value(2)
+                    self.ui.devWidget.item(2).setText(str(id))
+                    self.ui.devWidget.item(4).setText(str(num))
+                    self.ui.devWidget.item(6).setText(str(name))
+            # 不能选择同一个设备
+            dev2_name = self.ui.devComboBox_2.currentText()
+            if dev_name == dev2_name:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '请选择不同的设备！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                self.ui.devComboBox.setCurrentIndex(0)
+                self.ui.devWidget.item(2).setText('')
+                self.ui.devWidget.item(4).setText('')
+                self.ui.devWidget.item(6).setText('')
+
+    def on_devComboBox_2_currentIndexChanged(self):
+        dev2_name = self.ui.devComboBox_2.currentText()
+        if dev2_name != '选择设备':
+            query_sql = 'select id, num, name from device where name = :name'
+            self.query.prepare(query_sql)
+            self.query.bindValue(':name', dev2_name)
+            if not self.query.exec_():
+                print(self.query.lastError())
+            else:
+                while self.query.next():
+                    id = self.query.value(0)
+                    num = self.query.value(1)
+                    name = self.query.value(2)
+                    self.ui.devWidget_2.item(2).setText(str(id))
+                    self.ui.devWidget_2.item(4).setText(str(num))
+                    self.ui.devWidget_2.item(6).setText(str(name))
+            # 不能选择同一个设备
+            dev_name = self.ui.devComboBox.currentText()
+            if dev_name == dev2_name:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '请选择不同的设备！',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                self.ui.devComboBox_2.setCurrentIndex(0)
+                self.ui.devWidget_2.item(2).setText('')
+                self.ui.devWidget_2.item(4).setText('')
+                self.ui.devWidget_2.item(6).setText('')
 
     def on_comboBox_2_currentIndexChanged(self):
         method = self.ui.comboBox_2.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
         if self.lambda_hat >= 0 and self.beta_hat >= 0:
             if method == 0:
-                self.m_pdf_chart_2.addSeries(self.m_pdf_series_2_ls)
-                self.m_cdf_chart_2.addSeries(self.m_cdf_series_2_ls)
-                self.m_relia_chart_2.addSeries(self.m_relia_series_2_ls)
-                self.m_fail_chart_2.addSeries(self.m_fail_series_2_ls)
-                self.m_pdf_chart_2.removeSeries(self.m_pdf_series_2_map)
-                self.m_cdf_chart_2.removeSeries(self.m_cdf_series_2_map)
-                self.m_relia_chart_2.removeSeries(self.m_relia_series_2_map)
-                self.m_fail_chart_2.removeSeries(self.m_fail_series_2_map)
+                self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_ls)
+                self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_ls)
+                self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_ls)
+                self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_ls)
+                self.m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_map)
+                self.m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_map)
+                self.m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_map)
+                self.m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_map)
                 # 填充表格
                 self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % self.lambda_hat_2)
                 self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % self.beta_hat_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(self.lambda_hat_2, self.beta_hat_2))
+                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText(
+                    '%.4f' % rf.mtbf(self.lambda_hat_2, self.beta_hat_2))
             else:
-                self.m_pdf_chart_2.addSeries(self.m_pdf_series_2_map)
-                self.m_cdf_chart_2.addSeries(self.m_cdf_series_2_map)
-                self.m_relia_chart_2.addSeries(self.m_relia_series_2_map)
-                self.m_fail_chart_2.addSeries(self.m_fail_series_2_map)
-                self.m_pdf_chart_2.removeSeries(self.m_pdf_series_2_ls)
-                self.m_cdf_chart_2.removeSeries(self.m_cdf_series_2_ls)
-                self.m_relia_chart_2.removeSeries(self.m_relia_series_2_ls)
-                self.m_fail_chart_2.removeSeries(self.m_fail_series_2_ls)
+                self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_map)
+                self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_map)
+                self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_map)
+                self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_map)
+                self.m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_ls)
+                self.m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_ls)
+                self.m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_ls)
+                self.m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_ls)
                 # 填充表格
                 self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % self.lambda_map_2)
                 self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % self.beta_map_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(self.lambda_map_2, self.beta_map_2))
-
+                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText(
+                    '%.4f' % rf.mtbf(self.lambda_map_2, self.beta_map_2))
 
     def on_m_pdf_series_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_pdf_series_ls or sender == self.m_pdf_series_map:
+            resultWidget = self.ui.dev1ResultWidget
+        else:
+            resultWidget = self.ui.dev2ResultWidget
         if state:
             curr_time = point.x()
             pdf = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat, self.beta_hat, curr_time)
-            relia = rf.reliability(self.lambda_hat, self.beta_hat, curr_time)
-            fali = rf.failure_rate(self.lambda_hat, self.beta_hat, curr_time)
-            self.ui.resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
     def on_m_cdf_series_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_cdf_series_ls or sender == self.m_cdf_series_map:
+            resultWidget = self.ui.dev1ResultWidget
+        else:
+            resultWidget = self.ui.dev2ResultWidget
         if state:
             curr_time = point.x()
             cdf = point.y()
-            pdf = rf.Weibull_pdf(self.lambda_hat, self.beta_hat, curr_time)
-            relia = rf.reliability(self.lambda_hat, self.beta_hat, curr_time)
-            fali = rf.failure_rate(self.lambda_hat, self.beta_hat, curr_time)
-            self.ui.resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
     def on_m_relia_series_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_relia_series_ls or sender == self.m_relia_series_map:
+            resultWidget = self.ui.dev1ResultWidget
+        else:
+            resultWidget = self.ui.dev2ResultWidget
         if state:
             curr_time = point.x()
             relia = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat, self.beta_hat, curr_time)
-            pdf = rf.Weibull_pdf(self.lambda_hat, self.beta_hat, curr_time)
-            fali = rf.failure_rate(self.lambda_hat, self.beta_hat, curr_time)
-            self.ui.resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
     def on_m_fali_series_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_fail_series_ls or sender == self.m_fail_series_map:
+            resultWidget = self.ui.dev1ResultWidget
+        else:
+            resultWidget = self.ui.dev2ResultWidget
         if state:
             curr_time = point.x()
             fali = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat, self.beta_hat, curr_time)
-            relia = rf.reliability(self.lambda_hat, self.beta_hat, curr_time)
-            pdf = rf.Weibull_pdf(self.lambda_hat, self.beta_hat, curr_time)
-            self.ui.resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
-    def on_m_pdf_series_2_hovered(self, point, state):
+    def on_m_pdf_series_maintain_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_pdf_series_maintain_ls or sender == self.m_pdf_series_maintain_map:
+            resultWidget = self.ui.dev1MtResultWidget
+        else:
+            resultWidget = self.ui.dev2MtResultWidget
         if state:
             curr_time = point.x()
             pdf = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            relia = rf.reliability(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            fali = rf.failure_rate(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            self.ui.resultWidget_2.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget_2.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget_2.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget_2.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget_2.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
-    def on_m_cdf_series_2_hovered(self, point, state):
+    def on_m_cdf_series_maintain_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_cdf_series_maintain_ls or sender == self.m_cdf_series_maintain_map:
+            resultWidget = self.ui.dev1MtResultWidget
+        else:
+            resultWidget = self.ui.dev2MtResultWidget
         if state:
             curr_time = point.x()
             cdf = point.y()
-            pdf = rf.Weibull_pdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            relia = rf.reliability(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            fali = rf.failure_rate(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            self.ui.resultWidget_2.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget_2.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget_2.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget_2.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget_2.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
-    def on_m_relia_series_2_hovered(self, point, state):
+    def on_m_relia_series_maintain_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_relia_series_maintain_ls or sender == self.m_relia_series_maintain_map:
+            resultWidget = self.ui.dev1MtResultWidget
+        else:
+            resultWidget = self.ui.dev2MtResultWidget
         if state:
             curr_time = point.x()
             relia = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            pdf = rf.Weibull_pdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            fali = rf.failure_rate(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            self.ui.resultWidget_2.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget_2.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget_2.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget_2.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget_2.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            fali = rf.failure_rate(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
-    def on_m_fali_series_2_hovered(self, point, state):
+    def on_m_fali_series_maintain_hovered(self, point, state):
+        sender = self.sender()
+        if sender == self.m_fali_series_maintain_ls or sender == self.m_fali_series_maintain_map:
+            resultWidget = self.ui.dev1MtResultWidget
+        else:
+            resultWidget = self.ui.dev2MtResultWidget
         if state:
             curr_time = point.x()
             fali = point.y()
-            cdf = rf.Weibull_cdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            relia = rf.reliability(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            pdf = rf.Weibull_pdf(self.lambda_hat_2, self.beta_hat_2, curr_time)
-            self.ui.resultWidget_2.item(Result.curr_time_value.value).setText('%f' % curr_time)
-            self.ui.resultWidget_2.item(Result.pdf_value.value).setText('%f' % pdf)
-            self.ui.resultWidget_2.item(Result.cdf_value.value).setText('%f' % cdf)
-            self.ui.resultWidget_2.item(Result.relia_value.value).setText('%f' % relia)
-            self.ui.resultWidget_2.item(Result.fali_value.value).setText('%f' % fali)
+            lambda_hat, beta_hat = float(resultWidget.item(Result.lamda_value.value).text()), float(
+                resultWidget.item(Result.beta_value.value).text())
+            cdf = rf.Weibull_cdf(lambda_hat, beta_hat, curr_time)
+            relia = rf.reliability(lambda_hat, beta_hat, curr_time)
+            pdf = rf.Weibull_pdf(lambda_hat, beta_hat, curr_time)
+            resultWidget.item(Result.curr_time_value.value).setText('%f' % curr_time)
+            resultWidget.item(Result.pdf_value.value).setText('%f' % pdf)
+            resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
+            resultWidget.item(Result.relia_value.value).setText('%f' % relia)
+            resultWidget.item(Result.fali_value.value).setText('%f' % fali)
 
 if __name__ == '__main__':
     import sys
+
     app = QApplication(sys.argv)
     ui = MainWindow()
     ui.showMaximized()

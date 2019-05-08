@@ -1,13 +1,5 @@
 import numpy as np
 from scipy.special import gamma
-run_time_data = []
-run_time_prob = []
-maintain_time_data = []
-maintain_time_prob = []
-mu = 0
-sigma = 1
-mu_2 = 0
-sigma_2 = 0
 
 def Weibull_pdf(lamda, beta, t):
     '''
@@ -49,33 +41,17 @@ def failure_rate(lamda, beta, t):
     '''
     return (beta / lamda) * ((t / lamda) ** (beta - 1))
 
-def posterior_function(x):
+def posterior_function(x, t, mu, sigma):
     '''
     极大后验估计目标函数
     :param x:
     :return:
     '''
     lamda, beta = np.asarray(x)
-    t = np.array(run_time_data)
+    t = np.array(t)
     n = t.size
     return -(-np.log(sigma * np.sqrt(2 * np.pi)) -
              (beta - mu) ** 2 / (2 * sigma * sigma) +
-             n * (np.log(beta) - np.log(lamda)) +
-             (beta - 1) * np.sum(np.log(t)) -
-             n * (beta - 1) * np.log(lamda) -
-             np.sum((t / lamda) ** beta))
-
-def posterior_function_2(x):
-    '''
-    极大后验估计目标函数
-    :param x:
-    :return:
-    '''
-    lamda, beta = np.asarray(x)
-    t = np.array(maintain_time_data)
-    n = t.size
-    return -(-np.log(sigma_2 * np.sqrt(2 * np.pi)) -
-             (beta - mu_2) ** 2 / (2 * sigma_2 * sigma_2) +
              n * (np.log(beta) - np.log(lamda)) +
              (beta - 1) * np.sum(np.log(t)) -
              n * (beta - 1) * np.log(lamda) -
