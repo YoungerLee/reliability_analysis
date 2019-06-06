@@ -41,9 +41,9 @@
          <height>788</height>
         </rect>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_24">
+       <layout class="QVBoxLayout" name="verticalLayout_19">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_23">
+         <layout class="QHBoxLayout" name="horizontalLayout_28">
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
@@ -62,7 +62,7 @@
               </property>
               <item>
                <property name="text">
-                <string>可靠性分析</string>
+                <string>可靠度分析</string>
                </property>
                <property name="font">
                 <font>
@@ -284,11 +284,11 @@
              <number>0</number>
             </property>
             <widget class="QWidget" name="reliaPage">
-             <layout class="QVBoxLayout" name="verticalLayout_12">
+             <layout class="QVBoxLayout" name="verticalLayout_20">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_9">
+               <layout class="QVBoxLayout" name="verticalLayout_14">
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_19">
+                 <layout class="QHBoxLayout" name="horizontalLayout_24">
                   <item>
                    <layout class="QVBoxLayout" name="verticalLayout">
                     <item>
@@ -393,55 +393,56 @@
                    </layout>
                   </item>
                   <item>
-                   <layout class="QGridLayout" name="gridLayout">
-                    <item row="0" column="0">
-                     <widget class="QPushButton" name="outputDataButton">
-                      <property name="text">
-                       <string>导出数据</string>
-                      </property>
-                     </widget>
+                   <layout class="QVBoxLayout" name="verticalLayout_9">
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_19">
+                      <item>
+                       <widget class="QPushButton" name="outputDataButton">
+                        <property name="text">
+                         <string>导出数据</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="loadButton">
+                        <property name="text">
+                         <string>导入数据</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="manaRecButton">
+                        <property name="text">
+                         <string>管理记录</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
-                    <item row="0" column="1" colspan="2">
-                     <widget class="QPushButton" name="loadButton">
-                      <property name="text">
-                       <string>导入数据</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3" colspan="2">
-                     <widget class="QPushButton" name="manaRecButton">
-                      <property name="text">
-                       <string>管理记录</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="5">
-                     <widget class="QPushButton" name="saveButton">
-                      <property name="text">
-                       <string>保存结果</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="0" colspan="2">
-                     <widget class="QPushButton" name="rawDataButton">
-                      <property name="text">
-                       <string>原始数据可视化</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="2" colspan="2">
-                     <widget class="QPushButton" name="scatterButton">
-                      <property name="text">
-                       <string>故障时间散点图</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="4" colspan="2">
-                     <widget class="QPushButton" name="reliaButton">
-                      <property name="text">
-                       <string>可靠性分析</string>
-                      </property>
-                     </widget>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_23">
+                      <item>
+                       <widget class="QPushButton" name="rawDataButton">
+                        <property name="text">
+                         <string>原始数据可视化</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="scatterButton">
+                        <property name="text">
+                         <string>故障时间散点图</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="reliaButton">
+                        <property name="text">
+                         <string>可靠度分析</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
                    </layout>
                   </item>
@@ -450,7 +451,7 @@
                 <item>
                  <widget class="QStackedWidget" name="reliaWidget">
                   <property name="currentIndex">
-                   <number>0</number>
+                   <number>2</number>
                   </property>
                   <widget class="QWidget" name="rawPage">
                    <layout class="QHBoxLayout" name="horizontalLayout_18">
@@ -562,9 +563,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="resultPage">
-                   <layout class="QVBoxLayout" name="verticalLayout_14">
+                   <layout class="QVBoxLayout" name="verticalLayout_12">
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_21">
+                     <layout class="QHBoxLayout" name="horizontalLayout_25">
                       <item>
                        <layout class="QVBoxLayout" name="verticalLayout_11">
                         <item>
@@ -626,23 +627,27 @@
                       <item>
                        <layout class="QVBoxLayout" name="verticalLayout_10">
                         <item>
-                         <widget class="QPushButton" name="nextResultButton">
-                          <property name="maximumSize">
-                           <size>
-                            <width>200</width>
-                            <height>16777215</height>
-                           </size>
-                          </property>
-                          <property name="text">
-                           <string>下一页</string>
-                          </property>
-                         </widget>
+                         <layout class="QHBoxLayout" name="horizontalLayout_21">
+                          <item>
+                           <widget class="QPushButton" name="nextResultButton">
+                            <property name="maximumSize">
+                             <size>
+                              <width>200</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>下一页</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
                         </item>
                         <item>
                          <widget class="QStackedWidget" name="reliaResultWidget">
                           <property name="maximumSize">
                            <size>
-                            <width>200</width>
+                            <width>300</width>
                             <height>16777215</height>
                            </size>
                           </property>
@@ -661,7 +666,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -803,7 +808,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -945,7 +950,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -1036,17 +1041,12 @@
                </layout>
               </item>
              </layout>
-             <zorder>manaRecButton</zorder>
-             <zorder>pushButton</zorder>
-             <zorder>label_3</zorder>
-             <zorder></zorder>
-             <zorder>layoutWidget</zorder>
              <zorder></zorder>
             </widget>
             <widget class="QWidget" name="page">
-             <layout class="QHBoxLayout" name="horizontalLayout_22">
+             <layout class="QHBoxLayout" name="horizontalLayout_27">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_19">
+               <layout class="QVBoxLayout" name="verticalLayout_18">
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_4">
                   <item>
@@ -1084,19 +1084,12 @@
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QPushButton" name="saveButton_2">
-                    <property name="text">
-                     <string>保存结果</string>
-                    </property>
-                   </widget>
-                  </item>
                  </layout>
                 </item>
                 <item>
                  <widget class="QStackedWidget" name="maintainWidget">
                   <property name="currentIndex">
-                   <number>0</number>
+                   <number>1</number>
                   </property>
                   <widget class="QWidget" name="page_3">
                    <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -1106,9 +1099,9 @@
                    </layout>
                   </widget>
                   <widget class="QWidget" name="page_4">
-                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                   <layout class="QVBoxLayout" name="verticalLayout_16">
                     <item>
-                     <layout class="QHBoxLayout" name="horizontalLayout_15">
+                     <layout class="QHBoxLayout" name="horizontalLayout_26">
                       <item>
                        <layout class="QVBoxLayout" name="verticalLayout_17">
                         <item>
@@ -1172,25 +1165,29 @@
                        </layout>
                       </item>
                       <item>
-                       <layout class="QVBoxLayout" name="verticalLayout_16">
+                       <layout class="QVBoxLayout" name="verticalLayout_4">
                         <item>
-                         <widget class="QPushButton" name="nextMtResultButton">
-                          <property name="maximumSize">
-                           <size>
-                            <width>200</width>
-                            <height>16777215</height>
-                           </size>
-                          </property>
-                          <property name="text">
-                           <string>下一页</string>
-                          </property>
-                         </widget>
+                         <layout class="QHBoxLayout" name="horizontalLayout_22">
+                          <item>
+                           <widget class="QPushButton" name="nextMtResultButton">
+                            <property name="maximumSize">
+                             <size>
+                              <width>200</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
+                            <property name="text">
+                             <string>下一页</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
                         </item>
                         <item>
                          <widget class="QStackedWidget" name="mtResultWidget">
                           <property name="maximumSize">
                            <size>
-                            <width>200</width>
+                            <width>300</width>
                             <height>16777215</height>
                            </size>
                           </property>
@@ -1198,7 +1195,7 @@
                            <number>0</number>
                           </property>
                           <widget class="QWidget" name="dev1MtPage">
-                           <layout class="QVBoxLayout" name="verticalLayout_4">
+                           <layout class="QHBoxLayout" name="horizontalLayout_15">
                             <item>
                              <widget class="QListWidget" name="dev1MtResultWidget">
                               <property name="minimumSize">
@@ -1209,7 +1206,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -1352,7 +1349,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -1495,7 +1492,7 @@
                               </property>
                               <property name="maximumSize">
                                <size>
-                                <width>200</width>
+                                <width>300</width>
                                 <height>16777215</height>
                                </size>
                               </property>
@@ -1594,9 +1591,9 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_7">
                   <item>
-                   <widget class="QPushButton" name="addDataButton_3">
+                   <widget class="QPushButton" name="manaFtRecButton">
                     <property name="text">
-                     <string>添加记录</string>
+                     <string>管理记录</string>
                     </property>
                    </widget>
                   </item>
@@ -1625,13 +1622,6 @@
                    <widget class="QPushButton" name="subSysButton">
                     <property name="text">
                      <string>子系统分析</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="saveButton_3">
-                    <property name="text">
-                     <string>保存结果</string>
                     </property>
                    </widget>
                   </item>
@@ -1709,7 +1699,7 @@
                           </property>
                           <property name="maximumSize">
                            <size>
-                            <width>200</width>
+                            <width>300</width>
                             <height>16777215</height>
                            </size>
                           </property>
@@ -1846,7 +1836,7 @@
                           </property>
                           <property name="maximumSize">
                            <size>
-                            <width>200</width>
+                            <width>300</width>
                             <height>16777215</height>
                            </size>
                           </property>
@@ -1945,7 +1935,7 @@
     <property name="title">
      <string>文件</string>
     </property>
-    <addaction name="actionOpenFile"/>
+    <addaction name="outputReportAction"/>
    </widget>
    <widget class="QMenu" name="view">
     <property name="title">
@@ -1990,14 +1980,20 @@
     <string>Open</string>
    </property>
   </action>
-  <action name="actionFileOpen">
-   <property name="text">
-    <string>fileOpen</string>
-   </property>
-  </action>
-  <action name="actionOpenFile">
+  <action name="fileOpenAction">
    <property name="text">
     <string>打开</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="outputReportAction">
+   <property name="text">
+    <string>导出报告</string>
+   </property>
+   <property name="toolTip">
+    <string>导出报告</string>
    </property>
   </action>
  </widget>

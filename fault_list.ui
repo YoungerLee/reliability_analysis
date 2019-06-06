@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>manaRecDialog</class>
- <widget class="QDialog" name="manaRecDialog">
+ <class>manaFaultDialog</class>
+ <widget class="QDialog" name="manaFaultDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>1006</width>
-    <height>678</height>
+    <height>674</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>运行记录列表</string>
+   <string>故障记录管理</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>

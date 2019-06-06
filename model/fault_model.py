@@ -1,19 +1,19 @@
 from PyQt5.QtCore import QAbstractTableModel, QVariant, QModelIndex, Qt, pyqtSignal
 from PyQt5.QtSql import QSqlQuery
-from meta.record import Record
+from meta.fault import Fault
 
-headerIndex = [STATUS, ID, RUN_TIME, ENV_TEMP, KNI_TEMP, RPA, TEST_DATE, AXIS] = range(8)
-headerData = ['全选', '序号', '运行时间/h', '环境温度/℃', '刀头温度/℃', '重复定位精度/μm', '测试日期', '轴向']
+headerIndex = [STATUS, ID, PATTERN, POSITION, REASON, ROOT, SITUATION, RECORD_TIME] = range(8)
 
+headerData = ['全选', '序号', '故障模式', '故障部位', '故障原因', '故障溯源', '整机/子系统', '记录时间']
 
-class RecordModel(QAbstractTableModel):
+class FaultModel(QAbstractTableModel):
     dataChanged = pyqtSignal(QModelIndex, QModelIndex)
 
     def __init__(self, parent=None):
-        super(RecordModel, self).__init__(parent)
+        super(FaultModel, self).__init__(parent)
         self.query = QSqlQuery()
         self.dirty = False
-        self.records = []
+        self.faults = []
         self.checkList = []
 
     def flags(self, index):
@@ -27,26 +27,26 @@ class RecordModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if (not index.isValid() or
-                not (0 <= index.row() < len(self.records))):
+                not (0 <= index.row() < len(self.faults))):
             return QVariant()
         row = index.row()
         column = index.column()
-        record = self.records[row]
+        fault = self.faults[row]
         if role == Qt.DisplayRole:
             if column == ID:
-                return record.id
-            elif column == RUN_TIME:
-                return record.run_time
-            elif column == ENV_TEMP:
-                return record.env_temp
-            elif column == KNI_TEMP:
-                return record.kni_temp
-            elif column == RPA:
-                return record.rpa
-            elif column == TEST_DATE:
-                return record.test_date
-            elif column == AXIS:
-                return record.axis
+                return fault.id
+            elif column == PATTERN:
+                return fault.pattern
+            elif column == POSITION:
+                return fault.position
+            elif column == REASON:
+                return fault.reason
+            elif column == ROOT:
+                return fault.root
+            elif column == SITUATION:
+                return fault.status
+            elif column == RECORD_TIME:
+                return fault.record_time
         elif role == Qt.CheckStateRole:
             if column == STATUS:
                 return Qt.Checked if self.checkList[row] == 'Checked' else Qt.Unchecked
@@ -70,44 +70,44 @@ class RecordModel(QAbstractTableModel):
                     return QVariant(headerData[STATUS])
                 elif section == ID:
                     return QVariant(headerData[ID])
-                elif section == RUN_TIME:
-                    return QVariant(headerData[RUN_TIME])
-                elif section == ENV_TEMP:
-                    return QVariant(headerData[ENV_TEMP])
-                elif section == KNI_TEMP:
-                    return QVariant(headerData[KNI_TEMP])
-                elif section == RPA:
-                    return QVariant(headerData[RPA])
-                elif section == TEST_DATE:
-                    return QVariant(headerData[TEST_DATE])
-                elif section == AXIS:
-                    return QVariant(headerData[AXIS])
+                elif section == PATTERN:
+                    return QVariant(headerData[PATTERN])
+                elif section == POSITION:
+                    return QVariant(headerData[POSITION])
+                elif section == REASON:
+                    return QVariant(headerData[REASON])
+                elif section == ROOT:
+                    return QVariant(headerData[ROOT])
+                elif section == SITUATION:
+                    return QVariant(headerData[SITUATION])
+                elif section == RECORD_TIME:
+                    return QVariant(headerData[RECORD_TIME])
 
     def rowCount(self, index=QModelIndex()):
-        return len(self.records)
+        return len(self.faults)
 
     def columnCount(self, index=QModelIndex()):
         return len(headerIndex)
 
     def setData(self, index, value, role=Qt.EditRole):
-        if index.isValid() and 0 <= index.row() < len(self.records):
+        if index.isValid() and 0 <= index.row() < len(self.faults):
             row = index.row()
             column = index.column()
-            record = self.records[row]
+            fault = self.faults[row]
             if column == ID:
-                record.id = int(value)
-            elif column == RUN_TIME:
-                record.run_time = float(value)
-            elif column == ENV_TEMP:
-                record.env_temp = float(value)
-            elif column == KNI_TEMP:
-                record.kni_temp = float(value)
-            elif column == RPA:
-                record.rpa = float(value)
-            elif column == TEST_DATE:
-                record.test_date = str(value)
-            elif column == AXIS:
-                record.axis = str(value)
+                fault.id = int(value)
+            elif column == PATTERN:
+                fault.pattern = str(value)
+            elif column == POSITION:
+                fault.position = str(value)
+            elif column == REASON:
+                fault.reason = str(value)
+            elif column == ROOT:
+                fault.root = str(value)
+            elif column == SITUATION:
+                fault.status = int(value)
+            elif column == RECORD_TIME:
+                fault.record_time = str(value)
             if role == Qt.CheckStateRole and column == STATUS:
                 self.checkList[row] = 'Checked' if value == Qt.Checked else 'Unchecked'
             self.dirty = True
@@ -118,15 +118,14 @@ class RecordModel(QAbstractTableModel):
     def insertRows(self, position, rows=1, index=QModelIndex()):
         self.beginInsertRows(QModelIndex(), position, position + rows - 1)
         for row in range(rows):
-            self.ships.insert(position + row, Record())
+            self.ships.insert(position + row, Fault())
         self.endInsertRows()
         self.dirty = True
         return True
 
     def removeRows(self, position, rows=1, index=QModelIndex()):
         self.beginRemoveRows(QModelIndex(), position, position + rows - 1)
-        self.records = (self.records[:position] +
-                        self.records[position + rows:])
+        self.faults = (self.faults[:position] + self.faults[position + rows:])
         self.endRemoveRows()
         self.dirty = True
         return True
@@ -145,31 +144,31 @@ class RecordModel(QAbstractTableModel):
 
     def loadRecordDataByDevId(self, dev_id):
         self.beginResetModel()
-        self.records.clear()
-        query_sql = 'SELECT id, run_time, env_temp, kni_temp, rpa, test_date, axis FROM record WHERE dev_id = :dev_id'
+        self.faults.clear()
+        query_sql = 'SELECT id, pattern, position, reason, root, status, record_time FROM breakdown WHERE dev_id = :dev_id'
         self.query.prepare(query_sql)
         self.query.bindValue(':dev_id', dev_id)
         if not self.query.exec_():
             print(self.query.lastError().text())
         else:
             while self.query.next():
-                record = Record()
-                record.id = int(self.query.value(0))
-                record.run_time = float(self.query.value(1))
-                record.env_temp = float(self.query.value(2))
-                record.kni_temp = float(self.query.value(3))
-                record.rpa = float(self.query.value(4))
-                record.test_date = str(self.query.value(5))
-                record.axis = str(self.query.value(6))
-                self.records.append(record)
-            self.records = sorted(self.records, key=lambda x: x.id)
+                fault = Fault()
+                fault.id = int(self.query.value(0))
+                fault.pattern = str(self.query.value(1))
+                fault.position = str(self.query.value(2))
+                fault.reason = str(self.query.value(3))
+                fault.root = str(self.query.value(4))
+                fault.status = int(self.query.value(5))
+                fault.record_time = str(self.query.value(6))
+                self.faults.append(fault)
+            self.faults = sorted(self.faults, key=lambda x: x.id)
             self.checkList = ['Unchecked'] * self.rowCount()
         self.endResetModel()
         self.dirty = False
 
     def delBatchData(self, rows):
         def delOneRow(query, id):
-            query_sql = 'DELETE FROM record WHERE id = :id'
+            query_sql = 'DELETE FROM breakdown WHERE id = :id'
             query.prepare(query_sql)
             query.bindValue(':id', id)
             if not query.exec_():
@@ -178,77 +177,74 @@ class RecordModel(QAbstractTableModel):
                 print('deleted!')
 
         for row in rows:
-            rec_id = self.records[row].id
+            rec_id = self.faults[row].id
             delOneRow(self.query, rec_id)
-        self.records = [val for idx, val in enumerate(self.records) if idx not in rows]
+        self.faults = [val for idx, val in enumerate(self.faults) if idx not in rows]
         self.checkList = [val for idx, val in enumerate(self.checkList) if idx not in rows]
 
-    def updateData(self, record):
-        query_sql = 'UPDATE record SET run_time = :run_time, env_temp = :env_temp, kni_temp = :kni_temp, ' \
-                    'rpa = :rpa, test_date = :test_date, axis = :axis WHERE id = :id'
+    def updateData(self, fault):
+        query_sql = 'UPDATE breakdown SET pattern = :pattern, position = :position, reason = :reason, root = :root, status = :status WHERE id = :id'
         self.query.prepare(query_sql)
-        self.query.bindValue(':id', record.id)
-        self.query.bindValue(':run_time', record.run_time)
-        self.query.bindValue(':env_temp', record.env_temp)
-        self.query.bindValue(':kni_temp', record.kni_temp)
-        self.query.bindValue(':rpa', record.rpa)
-        self.query.bindValue(':test_date', record.test_date)
-        self.query.bindValue(':axis', record.axis)
+        self.query.bindValue(':id', fault.id)
+        self.query.bindValue(':pattern', fault.pattern)
+        self.query.bindValue(':position', fault.position)
+        self.query.bindValue(':reason', fault.reason)
+        self.query.bindValue(':root', fault.root)
+        self.query.bindValue(':status', fault.status)
         if not self.query.exec_():
             print(self.query.lastError().text())
         else:
             print('updated!')
 
     def getTotalRecordCount(self, dev_id, begin_date='', end_date=''):
-        total_record = 0
-        query_sql = 'SELECT count(*) FROM record WHERE dev_id = :dev_id'
+        total_fault = 0
+        query_sql = 'SELECT count(*) FROM breakdown WHERE dev_id = :dev_id'
         if begin_date != '' and end_date != '':
-            query_sql += " AND test_date >= '{0}' AND test_date <= '{1}'".format(begin_date, end_date)
+            query_sql += " AND record_time >= '{0}' AND record_time <= '{1}'".format(begin_date, end_date)
         self.query.prepare(query_sql)
         self.query.bindValue(':dev_id', dev_id)
         if not self.query.exec_():
             print(self.query.lastError().text())
         else:
             if self.query.next():
-                total_record = self.query.value(0)
-        return total_record
+                total_fault = self.query.value(0)
+        return total_fault
 
     def getRecordByDevIdAndPages(self, dev_id, limit_index=0, page_count=10, begin_date='', end_date=''):
         self.beginResetModel()
-        self.records.clear()
-        date_query = '' if begin_date == '' or end_date == '' else "AND test_date >= '{0}' AND test_date <= '{1}'".format(
+        self.faults.clear()
+        date_query = '' if begin_date == '' or end_date == '' else "AND record_time >= '{0}' AND record_time <= '{1}'".format(
             begin_date, end_date)
-        query_sql = 'SELECT id, run_time, env_temp, kni_temp, rpa, test_date, axis ' \
-                    'FROM record WHERE dev_id = {0} {3} LIMIT {1}, {2}'.format(dev_id, limit_index, page_count, date_query)
+        query_sql = 'SELECT id, pattern, position, reason, root, status, record_time FROM breakdown WHERE dev_id = {0} {3} LIMIT {1}, {2}'.format(
+            dev_id, limit_index, page_count, date_query)
         self.query.prepare(query_sql)
         if not self.query.exec_():
             print(self.query.lastError().text())
         else:
             while self.query.next():
-                record = Record()
-                record.id = int(self.query.value(0))
-                record.run_time = float(self.query.value(1))
-                record.env_temp = float(self.query.value(2))
-                record.kni_temp = float(self.query.value(3))
-                record.rpa = float(self.query.value(4))
-                record.test_date = str(self.query.value(5))
-                record.axis = str(self.query.value(6))
-                self.records.append(record)
-            self.records = sorted(self.records, key=lambda x: x.id)
+                fault = Fault()
+                fault.id = int(self.query.value(0))
+                fault.pattern = str(self.query.value(1))
+                fault.position = str(self.query.value(2))
+                fault.reason = str(self.query.value(3))
+                fault.root = str(self.query.value(4))
+                fault.status = int(self.query.value(5))
+                fault.record_time = str(self.query.value(6))
+                self.faults.append(fault)
+            self.faults = sorted(self.faults, key=lambda x: x.id)
             self.checkList = ['Unchecked'] * self.rowCount()
         self.endResetModel()
         self.dirty = False
 
-    def insertRecord(self, record, dev_id):
-        insert_sql = 'insert into record(run_time, env_temp, kni_temp, rpa, test_date, axis, dev_id) values ' \
-                     '(:run_time, :env_temp, :kni_temp, :rpa, :test_date, :axis, :dev_id)'
+    def insertRecord(self, fault, dev_id):
+        insert_sql = 'insert into breakdown (pattern, position, reason, root, status, dev_id) values ' \
+                     '(:pattern, :position, :reason, :root, :status, :dev_id)'
         self.query.prepare(insert_sql)
-        self.query.bindValue(':run_time', record.run_time)
-        self.query.bindValue(':env_temp', record.env_temp)
-        self.query.bindValue(':kni_temp', record.kni_temp)
-        self.query.bindValue(':rpa', record.rpa)
-        self.query.bindValue(':test_date', record.test_date)
-        self.query.bindValue(':axis', record.axis)
+        self.query.bindValue(':pattern', fault.pattern)
+        self.query.bindValue(':position', fault.position)
+        self.query.bindValue(':reason', fault.reason)
+        self.query.bindValue(':root', fault.root)
+        self.query.bindValue(':status', fault.status)
         self.query.bindValue(':dev_id', dev_id)
         if not self.query.exec_():
             print(self.query.lastError().text())
@@ -279,11 +275,3 @@ class RecordModel(QAbstractTableModel):
                 name = self.query.value(0)
                 dev_names.append(name)
         return dev_names
-
-
-if __name__ == '__main__':
-    model = RecordModel()
-    model.loadDeviceData()
-    for i in range(len(headerIndex)):
-        idx = model.index(0, i)
-        print(model.data(idx))

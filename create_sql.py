@@ -1,11 +1,23 @@
 from PyQt5 import QtSql
 from PyQt5.QtSql import QSqlQuery
-import random
-import time
 import xlrd
+import datetime
+import time
+import random
 
+a1 = (2016, 1, 1, 0, 0, 0, 0, 0, 0)  # 设置开始日期时间元组（1976-01-01 00：00：00）
+a2 = (2019, 12, 31, 23, 59, 59, 0, 0, 0)  # 设置结束日期时间元组（2019-12-31 23：59：59）
 
-def read_raw_data( filename):
+start = time.mktime(a1)  # 生成开始时间戳
+end = time.mktime(a2)  # 生成结束时间戳
+
+def random_date(start, end):
+    t = random.randint(start, end)  # 在开始和结束时间戳中随机取出一个
+    date_touple = time.localtime(t)  # 将时间戳生成时间元组
+    date = time.strftime("%Y-%m-%d", date_touple)  # 将时间元组转成格式化字符串（1976-05-21）
+    return str(date)
+
+def read_raw_data(filename):
     '''
     读取原始数据
     :param filename: 文件名
@@ -55,10 +67,11 @@ def read_maintain_data(filename):
     heads = sheet.row_values(0)
     item_num = len(heads)
     # 读取数据
-    maintain_table = [[]] * (item_num-1)
-    for i in range(0, item_num-1):
-        maintain_table[i] = sheet.col_values(i+1)[1:]
+    maintain_table = [[]] * (item_num - 1)
+    for i in range(0, item_num - 1):
+        maintain_table[i] = sheet.col_values(i + 1)[1:]
     return maintain_table
+
 
 def read_fault_data(filename):
     '''
@@ -100,6 +113,7 @@ database.setDatabaseName('./db/reliability.db')
 database.open()
 query = QSqlQuery()
 print('create database ok')
+
 sql_str = 'create table device (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, ' \
           'num varchar(50), name varchar(50))'
 query.prepare(sql_str)
@@ -109,9 +123,9 @@ else:
     print('create a device table')
 
 sql_str = "create table record (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, " \
-                      "run_time double, env_temp double, kni_temp double, rpa double, axis variable(5), " \
-                      "dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
-                      "foreign key(dev_id) references device(id))"
+          "run_time double, env_temp double, kni_temp double, rpa double, axis variable(5), " \
+          "test_date date, dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
+          "foreign key(dev_id) references device(id))"
 query.prepare(sql_str)
 if not query.exec_():
     print(query.lastError().text())
@@ -119,9 +133,9 @@ else:
     print('create a record table')
 
 sql_str = "create table maintain (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, " \
-                      "maintain_date date, person varchar(50), maintain_time double, " \
-                      "dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
-                      "foreign key(dev_id) references device(id))"
+          "maintain_date date, person varchar(50), maintain_time double, " \
+          "dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
+          "foreign key(dev_id) references device(id))"
 query.prepare(sql_str)
 if not query.exec_():
     print(query.lastError().text())
@@ -129,9 +143,9 @@ else:
     print('create a maintain table')
 
 sql_str = "create table breakdown (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL, " \
-                      "pattern varchar(50), position varchar(50), reason varchar(50), root varchar(50), " \
-                      "status bit, dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
-                      "foreign key(dev_id) references device(id))"
+          "pattern varchar(50), position varchar(50), reason varchar(50), root varchar(50), " \
+          "status bit, dev_id int, record_time timestamp NOT NULL DEFAULT(datetime('now','localtime')), " \
+          "foreign key(dev_id) references device(id))"
 query.prepare(sql_str)
 if not query.exec_():
     print(query.lastError().text())
@@ -139,154 +153,165 @@ else:
     print('create a breakdown table')
 insert_sql = 'insert into device(num, name) values (:num, :name)'
 query.prepare(insert_sql)
-query.bindValue(':num', 'abc-123')
-query.bindValue(':name', 'dev2')
-if not query.exec_():
-    print(query.lastError().text())
-else:
-    print('inserted')
+for i in range(1, 500):
+    query.bindValue(':num', 'abc-123')
+    query.bindValue(':name', 'dev_{0}'.format(i))
+    if not query.exec_():
+        print(query.lastError().text())
+    else:
+        print('inserted device')
 
 relia_table = read_raw_data('F:\\PyProj\\reliability_analysis\\db\\运行记录表.xlsx')
 maintain_table = read_maintain_data('F:\\PyProj\\reliability_analysis\\db\\维修记录表.xlsx')
 break_table = read_fault_data('F:\\PyProj\\reliability_analysis\\db\\故障统计表.xlsx')
 
-insert_sql = 'insert into record(run_time, env_temp, kni_temp, rpa, axis, dev_id) values ' \
-             '(:run_time, :env_temp, :kni_temp, :rpa, :axis, :dev_id)'
-query.prepare(insert_sql)
 x_table = relia_table['x_table']
-for row in range(0, len(x_table[0])):
-    run_time = float(x_table[0][row])
-    env_temp = float(x_table[1][row])
-    kni_temp = float(x_table[2][row])
-    rpa = float(x_table[3][row])
-    axis = 'X'
-    dev_id = 1
-    query.bindValue(':run_time', run_time)
-    query.bindValue(':env_temp', env_temp)
-    query.bindValue(':kni_temp', kni_temp)
-    query.bindValue(':rpa', rpa)
-    query.bindValue(':axis', axis)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
 y_table = relia_table['y_table']
-for row in range(0, len(y_table[0])):
-    run_time = float(y_table[0][row])
-    env_temp = float(y_table[1][row])
-    kni_temp = float(y_table[2][row])
-    rpa = float(y_table[3][row])
-    axis = 'Y'
-    dev_id = 1
-    query.bindValue(':run_time', run_time)
-    query.bindValue(':env_temp', env_temp)
-    query.bindValue(':kni_temp', kni_temp)
-    query.bindValue(':rpa', rpa)
-    query.bindValue(':axis', axis)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
 z_table = relia_table['z_table']
-for row in range(0, len(z_table[0])):
-    run_time = float(z_table[0][row])
-    env_temp = float(z_table[1][row])
-    kni_temp = float(z_table[2][row])
-    rpa = float(z_table[3][row])
-    axis = 'Z'
-    dev_id = 1
-    query.bindValue(':run_time', run_time)
-    query.bindValue(':env_temp', env_temp)
-    query.bindValue(':kni_temp', kni_temp)
-    query.bindValue(':rpa', rpa)
-    query.bindValue(':axis', axis)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
-
-insert_sql = 'insert into maintain (maintain_date, person, maintain_time, dev_id) values ' \
-             '(:maintain_date, :person, :maintain_time, :dev_id)'
-query.prepare(insert_sql)
-for row in range(0, len(maintain_table[0])):
-    maintain_date = str(maintain_table[0][row])
-    person = str(maintain_table[1][row])
-    maintain_time = maintain_table[2][row]
-    dev_id = 1
-    query.bindValue(':maintain_date', maintain_date)
-    query.bindValue(':person', person)
-    query.bindValue(':maintain_time', maintain_time)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
 
 
-insert_sql = 'insert into breakdown (pattern, position, reason, root, status, dev_id) values ' \
-                             '(:pattern, :position, :reason, :root, :status, :dev_id)'
-query.prepare(insert_sql)
-whole_table = break_table['whole']
-subsys_table = break_table['subsys']
-# 整机
-for row in range(0, len(whole_table[0])):
-    pattern = str(whole_table[0][row])
-    position = str(whole_table[1][row])
-    reason = str(whole_table[2][row])
-    root = str(whole_table[3][row])
-    status = 1
-    dev_id = 1
-    query.bindValue(':pattern', pattern)
-    query.bindValue(':position', position)
-    query.bindValue(':reason', reason)
-    query.bindValue(':root', root)
-    query.bindValue(':status', status)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
+def date2str(date):
+    date = xlrd.xldate_as_tuple(date, 0)
+    date = datetime.datetime(*date)
+    date = str(date.strftime('%Y-%d-%m'))
+    return date
 
-# 子系统
-for row in range(0, len(subsys_table[0])):
-    pattern = str(subsys_table[0][row])
-    position = str(subsys_table[1][row])
-    reason = str(subsys_table[2][row])
-    root = str(subsys_table[3][row])
-    status = 0
-    dev_id = 1
-    query.bindValue(':pattern', pattern)
-    query.bindValue(':position', position)
-    query.bindValue(':reason', reason)
-    query.bindValue(':root', root)
-    query.bindValue(':status', status)
-    query.bindValue(':dev_id', dev_id)
-    if not query.exec_():
-        print(query.lastError().text())
-    else:
-        print('inserted')
+for dev_id in range(1, 4):
+    insert_sql = 'insert into record(run_time, env_temp, kni_temp, rpa, axis, test_date, dev_id) values ' \
+                 '(:run_time, :env_temp, :kni_temp, :rpa, :axis, :test_date, :dev_id)'
+    query.prepare(insert_sql)
+    for row in range(0, len(x_table[0])):
+        run_time = float(x_table[0][row])
+        env_temp = float(x_table[1][row]) + random.gauss(mu=0, sigma=0.01)
+        kni_temp = float(x_table[2][row]) + random.gauss(mu=0, sigma=0.01)
+        rpa = float(x_table[3][row]) + random.gauss(mu=0, sigma=0.01)
+        axis = 'X'
+        test_date = random_date(start, end)
+        query.bindValue(':run_time', run_time)
+        query.bindValue(':env_temp', env_temp)
+        query.bindValue(':kni_temp', kni_temp)
+        query.bindValue(':rpa', rpa)
+        query.bindValue(':axis', axis)
+        query.bindValue(':test_date', test_date)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
 
-query_sql = 'select id, num, name from device where id = :id'
-query.prepare(query_sql)
-query.bindValue(':id', 1)
-if not query.exec_():
-    print(query.lastError())
-else:
-    while query.next():
-        id = query.value(0)
-        num = query.value(1)
-        name = query.value(2)
-        print(id,num,name)
+    for row in range(0, len(y_table[0])):
+        run_time = float(y_table[0][row])
+        env_temp = float(y_table[1][row]) + random.gauss(mu=0, sigma=0.1)
+        kni_temp = float(y_table[2][row]) + random.gauss(mu=0, sigma=0.1)
+        rpa = float(y_table[3][row]) + random.gauss(mu=0, sigma=0.1)
+        axis = 'Y'
+        test_date = random_date(start, end)
+        query.bindValue(':run_time', run_time)
+        query.bindValue(':env_temp', env_temp)
+        query.bindValue(':kni_temp', kni_temp)
+        query.bindValue(':rpa', rpa)
+        query.bindValue(':axis', axis)
+        query.bindValue(':test_date', test_date)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
 
-query_sql = 'select * from record where dev_id = :dev_id'
-query.prepare(query_sql)
-query.bindValue(':dev_id', 1)
+    for row in range(0, len(z_table[0])):
+        run_time = float(z_table[0][row])
+        env_temp = float(z_table[1][row]) + random.gauss(mu=0, sigma=0.01)
+        kni_temp = float(z_table[2][row]) + random.gauss(mu=0, sigma=0.01)
+        rpa = float(z_table[3][row]) + random.gauss(mu=0, sigma=0.01)
+        axis = 'Z'
+        test_date = random_date(start, end)
+        query.bindValue(':run_time', run_time)
+        query.bindValue(':env_temp', env_temp)
+        query.bindValue(':kni_temp', kni_temp)
+        query.bindValue(':rpa', rpa)
+        query.bindValue(':axis', axis)
+        query.bindValue(':test_date', test_date)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
 
-if not query.exec_():
-    print(query.lastError().text())
-else:
-    while query.next():
-        print(query.value(0), query.value(1), query.value(2), query.value(3), query.value(4), query.value(5), query.value(6), query.value(7))
+    insert_sql = 'insert into maintain (maintain_date, person, maintain_time, dev_id) values ' \
+                 '(:maintain_date, :person, :maintain_time, :dev_id)'
+    query.prepare(insert_sql)
+    for row in range(0, len(maintain_table[0])):
+        maintain_date = random_date(start, end)
+        person = str(maintain_table[1][row])
+        maintain_time = float(maintain_table[2][row]) + random.gauss(mu=0, sigma=0.01)
+        query.bindValue(':maintain_date', maintain_date)
+        query.bindValue(':person', person)
+        query.bindValue(':maintain_time', maintain_time)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
+
+    insert_sql = 'insert into breakdown (pattern, position, reason, root, status, dev_id) values ' \
+                 '(:pattern, :position, :reason, :root, :status, :dev_id)'
+    query.prepare(insert_sql)
+    whole_table = break_table['whole']
+    subsys_table = break_table['subsys']
+    # 整机
+    for row in range(0, len(whole_table[0])):
+        pattern = str(whole_table[0][row])
+        position = str(whole_table[1][row])
+        reason = str(whole_table[2][row])
+        root = str(whole_table[3][row])
+        status = 1
+        query.bindValue(':pattern', pattern)
+        query.bindValue(':position', position)
+        query.bindValue(':reason', reason)
+        query.bindValue(':root', root)
+        query.bindValue(':status', status)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
+    # 子系统
+    for row in range(0, len(subsys_table[0])):
+        pattern = str(subsys_table[0][row])
+        position = str(subsys_table[1][row])
+        reason = str(subsys_table[2][row])
+        root = str(subsys_table[3][row])
+        status = 0
+        query.bindValue(':pattern', pattern)
+        query.bindValue(':position', position)
+        query.bindValue(':reason', reason)
+        query.bindValue(':root', root)
+        query.bindValue(':status', status)
+        query.bindValue(':dev_id', dev_id)
+        if not query.exec_():
+            print(query.lastError().text())
+        else:
+            print('inserted')
+
+
+# query_sql = 'SELECT name, num FROM device WHERE name LIKE "%ev_3%" LIMIT 1, 10 '
+# query_sql = 'SELECT MAX(test_date), MIN(test_date) FROM record WHERE dev_id = 1'
+# query.prepare(query_sql)
+# if not query.exec_():
+#     print(query.lastError().text())
+# else:
+#     while query.next():
+#         run_time = query.value(0)
+#         test_date = query.value(1)
+#         print(run_time, test_date)
+
+# query_sql = 'select * from maintain where dev_id = :dev_id'
+# query.prepare(query_sql)
+# query.bindValue(':dev_id', 1)
+#
+# if not query.exec_():
+#     print(query.lastError().text())
+# else:
+#     while query.next():
+#         print(query.value(0), query.value(1), query.value(2), query.value(3), query.value(4), query.value(5),
+#               query.value(6), query.value(7))

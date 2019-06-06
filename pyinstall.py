@@ -6,6 +6,7 @@ if __name__ == '__main__':
     # opts = ['reliability_app.py', '-w', '-F', '--icon=app.ico']
     # run(opts)
     opts = ['-c',
+            '-w',
             '--add-data', 'app.ico;.',
             '--icon', 'app.ico',
             '--add-binary', 'D:/Anaconda3/lib/site-packages/scipy/extra-dll/*;.',
@@ -20,5 +21,4 @@ if __name__ == '__main__':
             '--hidden-import', 'scipy._lib.messagestream',
             '-y', '--noupx', '--clean',
             'reliability_app.py']
-
     run(opts)

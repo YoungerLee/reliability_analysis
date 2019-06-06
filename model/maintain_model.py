@@ -174,9 +174,11 @@ class MaintainModel(QAbstractTableModel):
         else:
             print('updated!')
 
-    def getTotalRecordCount(self, dev_id):
+    def getTotalRecordCount(self, dev_id, begin_date='', end_date=''):
         total_maintain = 0
         query_sql = 'SELECT count(*) FROM maintain WHERE dev_id = :dev_id'
+        if begin_date != '' and end_date != '':
+            query_sql += " AND maintain_date >= '{0}' AND maintain_date <= '{1}'".format(begin_date, end_date)
         self.query.prepare(query_sql)
         self.query.bindValue(':dev_id', dev_id)
         if not self.query.exec_():
@@ -186,11 +188,13 @@ class MaintainModel(QAbstractTableModel):
                 total_maintain = self.query.value(0)
         return total_maintain
 
-    def getRecordByDevIdAndPages(self, dev_id, limit_index=0, page_count=10):
+    def getRecordByDevIdAndPages(self, dev_id, limit_index=0, page_count=10, begin_date='', end_date=''):
         self.beginResetModel()
         self.maintains.clear()
-        query_sql = 'SELECT id, maintain_date, person, maintain_time FROM maintain WHERE dev_id = {0} LIMIT {1}, {2}'.format(
-            dev_id, limit_index, page_count)
+        date_query = '' if begin_date == '' or end_date == '' else "AND maintain_date >= '{0}' AND maintain_date <= '{1}'".format(
+            begin_date, end_date)
+        query_sql = 'SELECT id, maintain_date, person, maintain_time FROM maintain WHERE dev_id = {0} {3} LIMIT {1}, {2}'.format(
+            dev_id, limit_index, page_count, date_query)
         self.query.prepare(query_sql)
         if not self.query.exec_():
             print(self.query.lastError().text())

@@ -42,6 +42,6 @@ def runUi2Py(ui_file):
 	os.system(cmd)
 ###### 程序的主入口		
 if __name__ == "__main__":
-	# runMain()
-	runUi2Py('reliability_main.ui')
+	runMain()
+	# runUi2Py('reliability_main.ui')
 

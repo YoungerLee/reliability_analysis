@@ -119,10 +119,11 @@ class DeviceModel(QAbstractTableModel):
             self.checkList = ['Unchecked'] * self.rowCount()
         self.endResetModel()
 
-    def getDeviceByPages(self, limit_index, page_count):
+    def getDeviceByPages(self, limit_index, page_count, fuzzy=''):
         self.beginResetModel()
         self.devices.clear()
-        query_sql = 'SELECT * FROM device LIMIT {0}, {1}'.format(limit_index, page_count)
+        fuzzy_word = fuzzy if fuzzy == '' else "WHERE name LIKE '{0}'".format('%' + fuzzy + '%')
+        query_sql = "SELECT * FROM device {2} LIMIT {0}, {1}".format(limit_index, page_count, fuzzy_word)
         self.query.prepare(query_sql)
         if not self.query.exec_():
             print(self.query.lastError().text())
@@ -138,9 +139,10 @@ class DeviceModel(QAbstractTableModel):
         self.endResetModel()
         self.dirty = False
 
-    def getTotalRecordCount(self):
+    def getTotalRecordCount(self, fuzzy=''):
         total_record = 0
-        query_sql = 'SELECT count(*) FROM device'
+        fuzzy_word = fuzzy if fuzzy == '' else "WHERE name LIKE '{0}'".format('%' + fuzzy + '%')
+        query_sql = "SELECT count(*) FROM device {0}".format(fuzzy_word)
         self.query.prepare(query_sql)
         if not self.query.exec_():
             print(self.query.lastError().text())
@@ -158,6 +160,7 @@ class DeviceModel(QAbstractTableModel):
                 print(self.query.lastError().text())
             else:
                 print('deleted!')
+
         for row in rows:
             id = self.devices[row].id
             delOneRow(id)

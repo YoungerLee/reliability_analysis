@@ -1,8 +1,10 @@
 from Ui_reliability_main import Ui_MainWindow
+from output_report_dialog import OutputReportDialog
 from table_list import *
+from meta.report import Report
 import reliability_analysis.function as rf
 import reliability_analysis.estimate as estimate
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot, Qt, QTime, QEventLoop, QCoreApplication
 from PyQt5.QtChart import QLineSeries, QScatterSeries, QChart, QBarSet, QBarSeries, QBarCategoryAxis, QValueAxis
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QFont, QPainter, QColor
@@ -11,9 +13,13 @@ from PyQt5.QtSql import QSqlQuery
 import numpy as np
 from enum import Enum, unique
 from openpyxl import Workbook
-import re
 import os
-
+import operator
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt, RGBColor
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 @unique
 class Result(Enum):
@@ -34,7 +40,6 @@ class Result(Enum):
     fali = 15
     fali_value = 16
 
-
 @unique
 class Fault(Enum):
     pattern = 0
@@ -46,9 +51,13 @@ class Fault(Enum):
     root = 6
     root_value = 7
 
-
 [RUN_TIME, ENV_TEMP, KNI_TEMP, RPA] = range(4)
 [PATT, POSI, REASON, ROOT] = range(4)
+
+def delay(msec):
+    dieTime = QTime.currentTime().addMSecs(msec)
+    while QTime.currentTime() < dieTime:
+        QCoreApplication.processEvents(QEventLoop.AllEvents, 100)
 
 
 class MainWindow(QMainWindow):
@@ -68,9 +77,11 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidget.setCurrentIndex(0)
         self.ui.listWidget.itemClicked.connect(self.on_listWidget_itemClicked)
         self.ui.comboBox.currentIndexChanged.connect(self.on_comboBox_currentIndexChanged)
+        self.ui.comboBox_2.currentIndexChanged.connect(self.on_comboBox_2_currentIndexChanged)
         self.ui.devComboBox.currentIndexChanged.connect(self.on_devComboBox_currentIndexChanged)
         self.ui.devComboBox_2.currentIndexChanged.connect(self.on_devComboBox_2_currentIndexChanged)
         self.ui.axisComboBox.currentIndexChanged.connect(self.on_axisComboBox_currentIndexChanged)
+        self.ui.outputReportAction.triggered.connect(self.outputReport)
         self.initScatterCharts()
         self.initLinePlot()
         self.initBarPlot()
@@ -154,7 +165,7 @@ class MainWindow(QMainWindow):
         初始化散点图
         :return: None
         '''
-        ##---可靠性分析---
+        ##---可靠度分析---
         self.m_scatter_chart = QChart()
         self.m_scatter_series = QScatterSeries(self.m_scatter_chart)
         self.m_scatter_series_2 = QScatterSeries(self.m_scatter_chart)  # dev_2
@@ -204,7 +215,7 @@ class MainWindow(QMainWindow):
         初始化曲线图
         :return:
         '''
-        # ---可靠性分析---
+        # ---可靠度分析---
         # 初始化概率密度图
         self.m_pdf_chart = QChart()
         # init series
@@ -637,7 +648,7 @@ class MainWindow(QMainWindow):
         self.m_patt_series = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_patt_chart.setTitle("故障模式统计图")  # 设置图题
@@ -652,7 +663,7 @@ class MainWindow(QMainWindow):
         self.m_posi_series = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_posi_chart.setTitle("故障部位统计图")  # 设置图题
@@ -667,7 +678,7 @@ class MainWindow(QMainWindow):
         self.m_reason_series = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_reason_chart.setTitle("故障原因统计图")  # 设置图题
@@ -682,7 +693,7 @@ class MainWindow(QMainWindow):
         self.m_root_series = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_root_chart.setTitle("故障溯源统计图")  # 设置图题
@@ -697,7 +708,7 @@ class MainWindow(QMainWindow):
         self.m_patt_series_2 = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_patt_chart_2.setTitle("故障模式统计图")  # 设置图题
@@ -712,7 +723,7 @@ class MainWindow(QMainWindow):
         self.m_posi_series_2 = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_posi_chart_2.setTitle("故障部位统计图")  # 设置图题
@@ -727,7 +738,7 @@ class MainWindow(QMainWindow):
         self.m_reason_series_2 = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_reason_chart_2.setTitle("故障原因统计图")  # 设置图题
@@ -742,7 +753,7 @@ class MainWindow(QMainWindow):
         self.m_root_series_2 = QBarSeries()
         axisY = QValueAxis()
         axisY.setTitleText('概率')  # 设置纵坐标标题
-        axisY.setRange(0, 1)  # 设置纵坐标范围
+        axisY.setRange(0, 10e-3)  # 设置纵坐标范围
         axisY.setLabelsFont(QFont('Times New Roman', 12))  # 设置纵坐标刻度的字体类型和大小
         axisY.setTitleFont(QFont('SansSerif', 10))  # 设置纵坐标标题字体的类型和大小
         self.m_root_chart_2.setTitle("故障溯源统计图")  # 设置图题
@@ -752,6 +763,641 @@ class MainWindow(QMainWindow):
         self.ui.rootView_2.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
         self.ui.rootView_2.setChart(self.m_root_chart_2)
         self.ui.rootView_2.show()
+
+    def saveReport(self, save_dir):
+        # 先保存所有结果到特定数据结构
+        report = Report()
+        item_head = ['尺度参数λ', '形状参数β', '可靠度', '失效率', 'MTBF']
+        item_head_mt = ['尺度参数λ', '形状参数β', '修复率', '失效率', 'MTTR']
+        item_head_ft = ['故障模式', '故障部位', '故障原因', '故障溯源']
+        # 写入结果
+        # 获取设备信息
+        dev_id_1 = str(self.ui.devWidget.item(2).text()).strip()
+        dev_name_1 = str(self.ui.devWidget.item(6).text()).strip()
+        dev_num_1 = str(self.ui.devWidget.item(4).text()).strip()
+        dev_id_2 = str(self.ui.devWidget_2.item(2).text()).strip()
+        dev_name_2 = str(self.ui.devWidget_2.item(6).text()).strip()
+        dev_num_2 = str(self.ui.devWidget_2.item(4).text()).strip()
+        # 图片路径
+        relia_env_temp_path = os.path.join(save_dir, '可靠度分析-环境温度折线图.jpg')
+        relia_kni_temp_path = os.path.join(save_dir, '可靠度分析-刀头温度折线图.jpg')
+        relia_rpa_path = os.path.join(save_dir, '可靠度分析-重复定位精度折线图.jpg')
+        relia_temp_gap_path = os.path.join(save_dir, '可靠度分析-温差折线图.jpg')
+        relia_scatter_path = os.path.join(save_dir, '可靠度分析-故障时间间隔散点图.jpg')
+        relia_pdf_path = os.path.join(save_dir, '可靠度分析-威布尔分布概率密度图.jpg')
+        relia_cdf_path = os.path.join(save_dir, '可靠度分析-威布尔分布累积分布图.jpg')
+        relia_relia_path = os.path.join(save_dir, '可靠度分析-可靠度曲线图.jpg')
+        relia_fail_path = os.path.join(save_dir, '可靠度分析-失效率曲线图.jpg')
+        mt_scatter_path = os.path.join(save_dir, '维修性分析-维修时间散点图.jpg')
+        mt_pdf_path = os.path.join(save_dir, '维修性分析-威布尔分布概率密度图.jpg')
+        mt_cdf_path = os.path.join(save_dir, '维修性分析-威布尔分布累积分布图.jpg')
+        mt_relia_path = os.path.join(save_dir, '维修性分析-修复率曲线图.jpg')
+        mt_fail_path = os.path.join(save_dir, '维修性分析-失效率曲线图.jpg')
+        fault_whole_patt_path = os.path.join(save_dir, '故障分析-整机-故障模式统计.jpg')
+        fault_whole_posi_path = os.path.join(save_dir, '故障分析-整机-故障部位统计.jpg')
+        fault_whole_reason_path = os.path.join(save_dir, '故障分析-整机-故障原因统计.jpg')
+        fault_whole_root_path = os.path.join(save_dir, '故障分析-整机-故障溯源统计.jpg')
+        fault_subsys_patt_path = os.path.join(save_dir, '故障分析-子系统-故障模式统计.jpg')
+        fault_subsys_posi_path = os.path.join(save_dir, '故障分析-子系统-故障部位统计.jpg')
+        fault_subsys_reason_path = os.path.join(save_dir, '故障分析-子系统-故障原因统计.jpg')
+        fault_subsys_root_path = os.path.join(save_dir, '故障分析-子系统-故障溯源统计.jpg')
+        # 保存表格
+        if dev_id_1 != '' and dev_id_2 == '':  # 只有设备1
+            report.setDevice(dev_id=int(dev_id_1), dev_name=dev_name_1, dev_num=dev_num_1)
+            report.setReliaTable(key='设备名称', value=[dev_name_1])
+            if self.ui.dev1ResultWidget.item(
+                    Result.lamda_value.value).text().strip() != '' and self.ui.dev1MtResultWidget.item(
+                Result.lamda_value.value).text().strip() != '' and self.ui.resultWidget_3.item(1).text().strip() != '':
+                relia_lamda = float(self.ui.dev1ResultWidget.item(Result.lamda_value.value).text())
+                relia_beta = float(self.ui.dev1ResultWidget.item(Result.beta_value.value).text())
+                relia_result = [round(relia_lamda, 4), round(relia_beta, 4),
+                                round(rf.reliability(relia_lamda, relia_beta, t=np.max(self.run_time_data_1)), 4),
+                                round(rf.failure_rate(relia_lamda, relia_beta, t=np.max(self.run_time_data_1)), 4),
+                                round(rf.mtbf(relia_lamda, relia_beta), 4)]
+                for head, item in zip(item_head, relia_result):
+                    report.setReliaTable(key=head, value=[item])
+                report.setMaintainTable(key='设备名称', value=[dev_name_1])
+                mt_lamda = float(self.ui.dev1MtResultWidget.item(Result.lamda_value.value).text())
+                mt_beta = float(self.ui.dev1MtResultWidget.item(Result.beta_value.value).text())
+                mt_result = [round(mt_lamda, 4), round(mt_beta, 4),
+                             round(rf.reliability(mt_lamda, mt_beta, t=np.max(self.maintain_time_of_dev_1)), 4),
+                             round(rf.failure_rate(mt_lamda, mt_beta, t=np.max(self.maintain_time_of_dev_1)), 4),
+                             round(rf.mtbf(mt_lamda, mt_beta), 4)]
+                for head, item in zip(item_head_mt, mt_result):
+                    report.setMaintainTable(key=head, value=[item])
+                report.setFaultTable(key='设备名称', value=[dev_name_1])
+                for i in range(0, len(item_head_ft)):
+                    report.setFaultTable(key=item_head_ft[i],
+                                         value=[
+                                             [re.findall(": (.+?) ", self.ui.resultWidget_3.item(2 * i + 1).text())[0],
+                                              re.findall(": (.+?) ", self.ui.resultWidget_4.item(2 * i + 1).text())[
+                                                  0]]])
+            else:
+                return Report()
+
+        elif dev_id_1 == '' and dev_id_2 != '':  # 只有设备2
+            report.setDevice(dev_id=int(dev_id_2), dev_name=dev_name_2, dev_num=dev_num_2)
+            report.setReliaTable(key='设备名称', value=[dev_name_2])
+            if self.ui.dev2ResultWidget.item(
+                    Result.lamda_value.value).text().strip() != '' and self.ui.dev2MtResultWidget.item(
+                Result.lamda_value.value).text().strip() != '' and self.ui.resultWidget_3.item(1).text().strip() != '':
+                relia_lamda = float(self.ui.dev2ResultWidget.item(Result.lamda_value.value).text())
+                relia_beta = float(self.ui.dev2ResultWidget.item(Result.beta_value.value).text())
+                relia_result = [round(relia_lamda, 4), round(relia_beta, 4),
+                                round(rf.reliability(relia_lamda, relia_beta, t=np.max(self.run_time_data_1)), 4),
+                                round(rf.failure_rate(relia_lamda, relia_beta, t=np.max(self.run_time_data_2)), 4),
+                                round(rf.mtbf(relia_lamda, relia_beta), 4)]
+                for head, item in zip(item_head, relia_result):
+                    report.setReliaTable(key=head, value=[item])
+                report.setMaintainTable(key='设备名称', value=[dev_name_2])
+                mt_lamda = float(self.ui.dev2MtResultWidget.item(Result.lamda_value.value).text())
+                mt_beta = float(self.ui.dev2MtResultWidget.item(Result.beta_value.value).text())
+                mt_result = [round(mt_lamda, 4), round(mt_beta, 4),
+                             round(rf.reliability(mt_lamda, mt_beta, t=np.max(self.maintain_time_of_dev_2)), 4),
+                             round(rf.failure_rate(mt_lamda, mt_beta, t=np.max(self.maintain_time_of_dev_2)), 4),
+                             round(rf.mtbf(mt_lamda, mt_beta), 4)]
+                for head, item in zip(item_head_mt, mt_result):
+                    report.setMaintainTable(key=head, value=[item])
+                report.setFaultTable(key='设备名称', value=[dev_name_2])
+                for i in range(0, len(item_head_ft)):
+                    report.setFaultTable(key=item_head_ft[i],
+                                         value=[
+                                             [re.findall(": (.+?) ", self.ui.resultWidget_3.item(2 * i + 1).text())[-1],
+                                              re.findall(": (.+?) ", self.ui.resultWidget_4.item(2 * i + 1).text())[
+                                                  -1]]])
+            else:
+                return Report()
+        elif dev_id_1 != '' and dev_id_2 != '':
+            report.setDevice(dev_id=int(dev_id_1), dev_name=dev_name_1, dev_num=dev_num_1)
+            report.setDevice(dev_id=int(dev_id_2), dev_name=dev_name_2, dev_num=dev_num_2)
+            report.setReliaTable(key='设备名称', value=[dev_name_1, dev_name_2])
+            if self.ui.dev2ResultWidget.item(
+                    Result.lamda_value.value).text().strip() != '' and self.ui.dev2MtResultWidget.item(
+                Result.lamda_value.value).text().strip() != '' and self.ui.resultWidget_3.item(1).text().strip() != '':
+                relia_lamda_dev_1 = float(self.ui.dev1ResultWidget.item(Result.lamda_value.value).text())
+                relia_beta_dev_1 = float(self.ui.dev1ResultWidget.item(Result.beta_value.value).text())
+                relia_result_dev_1 = [round(relia_lamda_dev_1, 4), round(relia_beta_dev_1, 4),
+                                      round(rf.reliability(relia_lamda_dev_1, relia_beta_dev_1,
+                                                           t=min(np.max(self.run_time_data_1),
+                                                                 np.max(self.run_time_data_2))), 4),
+                                      round(rf.failure_rate(relia_lamda_dev_1, relia_beta_dev_1,
+                                                            t=min(np.max(self.run_time_data_1),
+                                                                  np.max(self.run_time_data_2))), 4),
+                                      round(rf.mtbf(relia_lamda_dev_1, relia_beta_dev_1), 4)]
+                relia_lamda_dev_2 = float(self.ui.dev2ResultWidget.item(Result.lamda_value.value).text())
+                relia_beta_dev_2 = float(self.ui.dev2ResultWidget.item(Result.beta_value.value).text())
+                relia_result_dev_2 = [round(relia_lamda_dev_2, 4), round(relia_beta_dev_2, 4),
+                                      round(rf.reliability(relia_lamda_dev_2, relia_beta_dev_2,
+                                                           t=min(np.max(self.run_time_data_1),
+                                                                 np.max(self.run_time_data_2))), 4),
+                                      round(rf.failure_rate(relia_lamda_dev_2, relia_beta_dev_2,
+                                                            t=min(np.max(self.run_time_data_1),
+                                                                  np.max(self.run_time_data_2))), 4),
+                                      round(rf.mtbf(relia_lamda_dev_2, relia_beta_dev_2), 4)]
+                for i in range(len(item_head)):
+                    report.setReliaTable(key=item_head[i], value=[relia_result_dev_1[i], relia_result_dev_2[i]])
+                report.setMaintainTable(key='设备名称', value=[dev_name_1, dev_name_2])
+                mt_lamda_dev_1 = float(self.ui.dev1MtResultWidget.item(Result.lamda_value.value).text())
+                mt_beta_dev_1 = float(self.ui.dev1MtResultWidget.item(Result.beta_value.value).text())
+                mt_result_dev_1 = [round(mt_lamda_dev_1, 4), round(mt_beta_dev_1, 4),
+                                   round(rf.reliability(mt_lamda_dev_1, mt_beta_dev_1,
+                                                        t=min(np.max(self.maintain_time_of_dev_1),
+                                                              np.max(self.maintain_time_of_dev_2))), 4),
+                                   round(rf.failure_rate(mt_lamda_dev_1, mt_beta_dev_1,
+                                                         t=min(np.max(self.maintain_time_of_dev_1),
+                                                               np.max(self.maintain_time_of_dev_2))), 4),
+                                   round(rf.mtbf(mt_lamda_dev_1, mt_beta_dev_1), 4)]
+                mt_lamda_dev_2 = float(self.ui.dev2MtResultWidget.item(Result.lamda_value.value).text())
+                mt_beta_dev_2 = float(self.ui.dev2MtResultWidget.item(Result.beta_value.value).text())
+                mt_result_dev_2 = [round(mt_lamda_dev_2, 4), round(mt_beta_dev_2, 4),
+                                   round(rf.reliability(mt_lamda_dev_2, mt_beta_dev_2,
+                                                        t=min(np.max(self.maintain_time_of_dev_1),
+                                                              np.max(self.maintain_time_of_dev_2))), 4),
+                                   round(rf.failure_rate(mt_lamda_dev_2, mt_beta_dev_2,
+                                                         t=min(np.max(self.maintain_time_of_dev_1),
+                                                               np.max(self.maintain_time_of_dev_2))), 4),
+                                   round(rf.mtbf(mt_lamda_dev_2, mt_beta_dev_2), 4)]
+                for i in range(len(item_head_mt)):
+                    report.setMaintainTable(key=item_head_mt[i], value=[mt_result_dev_1[i], mt_result_dev_2[i]])
+                report.setFaultTable(key='设备名称', value=[dev_name_1, dev_name_2])
+                for i in range(0, len(item_head_ft)):
+                    report.setFaultTable(key=item_head_ft[i],
+                                         value=[
+                                             [re.findall(": (.+?) ", self.ui.resultWidget_3.item(2 * i + 1).text())[0],
+                                              re.findall(": (.+?) ", self.ui.resultWidget_4.item(2 * i + 1).text())[0]],
+                                             [re.findall(": (.+?) ", self.ui.resultWidget_3.item(2 * i + 1).text())[-1],
+                                              re.findall(": (.+?) ", self.ui.resultWidget_4.item(2 * i + 1).text())[-1]]
+                                         ])
+            else:
+                return Report()
+        else:
+            return Report()
+        # 保存图片路径
+        report.setReliaImages('可靠度分析-环境温度折线图', relia_env_temp_path)
+        report.setReliaImages('可靠度分析-刀头温度折线图', relia_kni_temp_path)
+        report.setReliaImages('可靠度分析-重复定位精度折线图', relia_rpa_path)
+        report.setReliaImages('可靠度分析-温差折线图', relia_temp_gap_path)
+        report.setReliaImages('可靠度分析-故障时间间隔散点图', relia_scatter_path)
+        report.setReliaImages('可靠度分析-威布尔分布概率密度图', relia_pdf_path)
+        report.setReliaImages('可靠度分析-威布尔分布累积分布图', relia_cdf_path)
+        report.setReliaImages('可靠度分析-可靠度曲线图', relia_relia_path)
+        report.setReliaImages('可靠度分析-失效率曲线图', relia_fail_path)
+        report.setMaintainImages('维修性分析-维修时间散点图', mt_scatter_path)
+        report.setMaintainImages('维修性分析-威布尔分布概率密度图', mt_pdf_path)
+        report.setMaintainImages('维修性分析-威布尔分布累积分布图', mt_cdf_path)
+        report.setMaintainImages('维修性分析-修复率曲线图', mt_relia_path)
+        report.setMaintainImages('维修性分析-失效率曲线图', mt_fail_path)
+        report.setFaultImages('故障分析-整机-故障模式统计', fault_whole_patt_path)
+        report.setFaultImages('故障分析-整机-故障部位统计', fault_whole_posi_path)
+        report.setFaultImages('故障分析-整机-故障原因统计', fault_whole_reason_path)
+        report.setFaultImages('故障分析-整机-故障溯源统计', fault_whole_root_path)
+        report.setFaultImages('故障分析-子系统-故障模式统计', fault_subsys_patt_path)
+        report.setFaultImages('故障分析-子系统-故障部位统计', fault_subsys_posi_path)
+        report.setFaultImages('故障分析-子系统-故障原因统计', fault_subsys_reason_path)
+        report.setFaultImages('故障分析-子系统-故障溯源统计', fault_subsys_root_path)
+        delay_time = 100
+        self.ui.stackedWidget.setCurrentIndex(0)
+        self.ui.reliaWidget.setCurrentIndex(0)
+        delay(delay_time)
+        self.save_view(self.ui.tempView_1, relia_env_temp_path)
+        self.save_view(self.ui.tempView_2, relia_kni_temp_path)
+        self.save_view(self.ui.rpaView, relia_rpa_path)
+        self.save_view(self.ui.straView, relia_temp_gap_path)
+        self.ui.reliaWidget.setCurrentIndex(1)
+        delay(delay_time)
+        self.save_view(self.ui.scatterView, relia_scatter_path)
+        self.ui.reliaWidget.setCurrentIndex(2)
+        delay(delay_time)
+        self.save_view(self.ui.pdfView, relia_pdf_path)
+        self.save_view(self.ui.cdfView, relia_cdf_path)
+        self.save_view(self.ui.reliaView, relia_relia_path)
+        self.save_view(self.ui.failView, relia_fail_path)
+        self.ui.stackedWidget.setCurrentIndex(1)
+        self.ui.maintainWidget.setCurrentIndex(0)
+        delay(delay_time)
+        self.save_view(self.ui.scatterView_2, mt_scatter_path)
+        self.ui.maintainWidget.setCurrentIndex(1)
+        delay(delay_time)
+        self.save_view(self.ui.pdfView_2, mt_pdf_path)
+        self.save_view(self.ui.cdfView_2, mt_cdf_path)
+        self.save_view(self.ui.reliaView_2, mt_relia_path)
+        self.save_view(self.ui.failView_2, mt_fail_path)
+        self.ui.stackedWidget.setCurrentIndex(2)
+        self.ui.faultWidget.setCurrentIndex(0)
+        delay(delay_time)
+        self.save_view(self.ui.pattView, fault_whole_patt_path)
+        self.save_view(self.ui.posiView, fault_whole_posi_path)
+        self.save_view(self.ui.reasonView, fault_whole_reason_path)
+        self.save_view(self.ui.rootView, fault_whole_root_path)
+        self.ui.faultWidget.setCurrentIndex(1)
+        delay(delay_time)
+        self.save_view(self.ui.pattView_2, fault_subsys_patt_path)
+        self.save_view(self.ui.posiView_2, fault_subsys_posi_path)
+        self.save_view(self.ui.reasonView_2, fault_subsys_reason_path)
+        self.save_view(self.ui.rootView_2, fault_subsys_root_path)
+        self.ui.stackedWidget.setCurrentIndex(0)
+        self.ui.reliaWidget.setCurrentIndex(0)
+        return report
+
+    def get_test_date(self):
+        begin_date = '2000-01-01'
+        end_date = '2000-01-01'
+        query_sql = 'SELECT MIN(test_date), MAX(test_date) FROM record'
+        self.query.prepare(query_sql)
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+        else:
+            while self.query.next():
+                begin_date = self.query.value(0)
+                end_date = self.query.value(1)
+        return [begin_date, end_date]
+
+    def outputReport(self):
+        dialog = OutputReportDialog()
+        dialog.show()
+        if dialog.exec_():
+            person = dialog.get_person()
+            save_dir = dialog.get_path()
+            report = self.saveReport(save_dir)
+            if not report.isEmpty():
+                filename = '可靠性分析报告.docx'
+                docx_file = os.path.join(save_dir, filename)
+                document = Document()
+                document.styles['Normal'].font.name = '宋体'
+                document.styles['Normal']._element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+                p = document.add_paragraph()  # 添加单位
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 标题居中
+                run = p.add_run('单位：佛山市质量计量监督检测中心\n')
+                run.font.bold = True
+                run.font.name = '黑体'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), '黑体')
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(21)  # 字体大小设置，和word里面的字号相对应
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 居中设置
+                # 添加标题
+                run = p.add_run('可靠性测试分析报告\n')
+                run.font.name = '黑体'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), '黑体')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(21)  # 字体大小设置，和word里面的字号相对应
+                # 添加测试信息
+                run = p.add_run('\n测试人员：{0}\t\t\t测试日期：{1}\n'.format(person, '——'.join(self.get_test_date())))
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                # 添加报告内容
+                ## 1.设备信息表格
+                # 添加标题
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('1 设备信息')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(14)  # 字体大小设置，和word里面的字号相对应
+                devices = report.getDevice()
+                rows = len(devices)
+                cols = 3
+                table = document.add_table(rows=rows + 1, cols=cols, style='Table Grid')
+                for i in range(rows):
+                    tr = table.rows[i]._tr
+                    trPr = tr.get_or_add_trPr()
+                    trHeight = OxmlElement('w:trHeight')
+                    trHeight.set(qn('w:val'), "450")
+                    trPr.append(trHeight)  # 表格高度设置
+                col = table.columns[1]
+                col.width = Inches(5)
+                # 添加表头
+                head = ['设备编号', '设备名称', '设备型号']
+                heading_cells = table.rows[0].cells
+                for i in range(cols):
+                    p = heading_cells[i].paragraphs[0]
+                    run = p.add_run(head[i])
+                    run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                    run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                    run.font.bold = True
+                    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 填充表格
+                for i in range(rows):
+                    row_cells = table.rows[i + 1].cells
+                    for j in range(cols):
+                        p = row_cells[j].paragraphs[0]
+                        run = p.add_run(str(devices[i][j]))
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                        run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                        run.font.bold = False
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                ## 2.可靠性分析
+                # 添加标题
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('\n2 可靠度分析')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(14)  # 字体大小设置，和word里面的字号相对应
+                # 添加图
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('2.1 相关曲线图')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                relia_images = report.getReliaImages()
+                document.add_picture(relia_images['可靠度分析-环境温度折线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-刀头温度折线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-重复定位精度折线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-温差折线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-故障时间间隔散点图'], width=Inches(5.60))
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-威布尔分布概率密度图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-威布尔分布累积分布图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-可靠度曲线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(relia_images['可靠度分析-可靠度曲线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                # 添加表格
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('2.2 分析结果表格')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                relia_table = report.getReliaTable()
+                # 添加表头
+                head = ['设备名称', '尺度参数λ', '形状参数β', '可靠度', '失效率', 'MTBF']
+                rows = len(relia_table[head[0]])
+                cols = len(head)
+                table = document.add_table(rows=rows + 1, cols=cols, style='Table Grid')
+                for i in range(rows):
+                    tr = table.rows[i]._tr
+                    trPr = tr.get_or_add_trPr()
+                    trHeight = OxmlElement('w:trHeight')
+                    trHeight.set(qn('w:val'), "450")
+                    trPr.append(trHeight)  # 表格高度设置
+                col = table.columns[1]
+                col.width = Inches(5)
+                heading_cells = table.rows[0].cells
+                for i in range(cols):
+                    p = heading_cells[i].paragraphs[0]
+                    run = p.add_run(head[i])
+                    run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                    run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                    run.font.bold = True
+                    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 填充表格
+                for i in range(rows):
+                    row_cells = table.rows[i + 1].cells
+                    for j in range(cols):
+                        p = row_cells[j].paragraphs[0]
+                        run = p.add_run(str(relia_table[head[j]][i]))
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                        run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                        run.font.bold = False
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                ## 3.维修性分析
+                # 添加标题
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('\n3 维修性分析')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(14)  # 字体大小设置，和word里面的字号相对应
+                # 添加图
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('3.1 相关曲线图')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                mt_images = report.getMaintainImages()
+                document.add_picture(mt_images['维修性分析-维修时间散点图'], width=Inches(5.60))
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(mt_images['维修性分析-威布尔分布概率密度图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(mt_images['维修性分析-威布尔分布累积分布图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(mt_images['维修性分析-修复率曲线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(mt_images['维修性分析-失效率曲线图'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                # 添加表格
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('3.2 分析结果表格')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                mt_table = report.getMaintainTable()
+                # 添加表头
+                head = ['设备名称', '尺度参数λ', '形状参数β', '修复率', '失效率', 'MTTR']
+                rows = len(mt_table[head[0]])
+                cols = len(head)
+                table = document.add_table(rows=rows + 1, cols=cols, style='Table Grid')
+                for i in range(rows):
+                    tr = table.rows[i]._tr
+                    trPr = tr.get_or_add_trPr()
+                    trHeight = OxmlElement('w:trHeight')
+                    trHeight.set(qn('w:val'), "450")
+                    trPr.append(trHeight)  # 表格高度设置
+                col = table.columns[1]
+                col.width = Inches(5)
+                heading_cells = table.rows[0].cells
+                for i in range(cols):
+                    p = heading_cells[i].paragraphs[0]
+                    run = p.add_run(head[i])
+                    run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                    run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                    run.font.bold = True
+                    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 填充表格
+                for i in range(rows):
+                    row_cells = table.rows[i + 1].cells
+                    for j in range(cols):
+                        p = row_cells[j].paragraphs[0]
+                        run = p.add_run(str(mt_table[head[j]][i]))
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                        run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                        run.font.bold = False
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                ## 4.故障分析
+                # 添加标题
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('\n4 故障分析')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(14)  # 字体大小设置，和word里面的字号相对应
+                # 整机部分
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('4.1 整机分析')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                # 添加图
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('4.1.1 相关统计图')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                ft_images = report.getFaultImages()
+                document.add_picture(ft_images['故障分析-整机-故障模式统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-整机-故障部位统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-整机-故障原因统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-整机-故障溯源统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                # 添加表格
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('4.1.2 分析结果表格')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                ft_table = report.getFaultTable()
+                # 添加表头
+                head = ['设备名称', '故障模式', '故障部位', '故障原因', '故障溯源']
+                rows = len(ft_table[head[0]])
+                cols = len(head)
+                table = document.add_table(rows=rows + 1, cols=cols, style='Table Grid')
+                for i in range(rows):
+                    tr = table.rows[i]._tr
+                    trPr = tr.get_or_add_trPr()
+                    trHeight = OxmlElement('w:trHeight')
+                    trHeight.set(qn('w:val'), "450")
+                    trPr.append(trHeight)  # 表格高度设置
+                col = table.columns[1]
+                col.width = Inches(5)
+                heading_cells = table.rows[0].cells
+                for i in range(cols):
+                    p = heading_cells[i].paragraphs[0]
+                    run = p.add_run(head[i])
+                    run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                    run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                    run.font.bold = True
+                    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 填充表格
+                for i in range(rows):
+                    row_cells = table.rows[i + 1].cells
+                    for j in range(cols):
+                        p = row_cells[j].paragraphs[0]
+                        if j == 0:
+                            run = p.add_run(str(ft_table[head[j]][i]))
+                        else:
+                            run = p.add_run(str(ft_table[head[j]][i][0]))
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                        run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                        run.font.bold = False
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 子系统部分
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('\n4.2 整机分析')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                # 添加图
+                p = document.add_paragraph()  # 添加标题
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('4.2.1 相关统计图')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                document.add_picture(ft_images['故障分析-子系统-故障模式统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-子系统-故障部位统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-子系统-故障原因统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                document.add_picture(ft_images['故障分析-子系统-故障溯源统计'])
+                last_paragraph = document.paragraphs[-1]
+                last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # 图片居中设置
+                # 添加表格
+                p = document.add_paragraph()
+                p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT  # 标题靠左
+                run = p.add_run('4.2.2 分析结果表格')
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                ft_table = report.getFaultTable()
+                # 添加表头
+                table = document.add_table(rows=rows + 1, cols=cols, style='Table Grid')
+                for i in range(rows):
+                    tr = table.rows[i]._tr
+                    trPr = tr.get_or_add_trPr()
+                    trHeight = OxmlElement('w:trHeight')
+                    trHeight.set(qn('w:val'), "450")
+                    trPr.append(trHeight)  # 表格高度设置
+                col = table.columns[1]
+                col.width = Inches(5)
+                heading_cells = table.rows[0].cells
+                for i in range(cols):
+                    p = heading_cells[i].paragraphs[0]
+                    run = p.add_run(head[i])
+                    run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                    run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                    run.font.bold = True
+                    p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # 填充表格
+                for i in range(rows):
+                    row_cells = table.rows[i + 1].cells
+                    for j in range(cols):
+                        p = row_cells[j].paragraphs[0]
+                        if j == 0:
+                            run = p.add_run(str(ft_table[head[j]][i]))
+                        else:
+                            run = p.add_run(str(ft_table[head[j]][i][1]))
+                        run.font.color.rgb = RGBColor(0, 0, 0)  # 颜色设置，这里是用RGB颜色
+                        run.font.size = Pt(12)  # 字体大小设置，和word里面的字号相对应
+                        run.font.bold = False
+                        p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+                # 保存文档
+                document.save(docx_file)
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '保存成功',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
+                for filename in os.listdir(save_dir):
+                    if '.jpg' in filename:
+                        os.remove(os.path.join(save_dir, filename))
+            else:
+                msg_box = QMessageBox(QMessageBox.Information,
+                                      '提示',
+                                      '无分析结果',
+                                      QMessageBox.Ok)
+                msg_box.exec_()
 
     def on_listWidget_itemClicked(self):
         curr_row = self.ui.listWidget.currentRow()
@@ -996,15 +1642,6 @@ class MainWindow(QMainWindow):
     def plot_raw_data(self, data_table, m_env_temp_series, m_env_temp_scatter, m_kni_temp_series, m_kni_temp_scatter,
                       m_rpa_series, m_rpa_scatter, m_stra_series, m_stra_scatter):
         if len(data_table) > 0:
-            # first clear old series
-            m_env_temp_series.clear()
-            m_env_temp_scatter.clear()
-            m_kni_temp_series.clear()
-            m_kni_temp_scatter.clear()
-            m_rpa_series.clear()
-            m_rpa_scatter.clear()
-            m_stra_series.clear()
-            m_stra_scatter.clear()
             record_num = len(data_table[0])
             # 绘制温度曲线
             t_max = max(data_table[RUN_TIME])
@@ -1063,13 +1700,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def on_loadButton_clicked(self):
-        def is_number(num):
-            pattern = re.compile(r'^[-+]?[-0-9]\d*\.\d*|[-+]?\.?[0-9]\d*$')
-            result = pattern.match(num)
-            if result:
-                return True
-            else:
-                return False
+        from utils.valid_utils import isNumber
 
         def check_data_exist(data_table):
             if len(data_table) <= 0 or (
@@ -1089,7 +1720,7 @@ class MainWindow(QMainWindow):
                                   QMessageBox.Ok)
             msg_box.exec_()
             return
-        if not (is_number(temp_thresh) and is_number(rpa_thresh)):
+        if not (isNumber(temp_thresh) and isNumber(rpa_thresh)):
             msg_box = QMessageBox(QMessageBox.Information,
                                   '提示',
                                   '请填写正确数值',
@@ -1112,6 +1743,23 @@ class MainWindow(QMainWindow):
                 return
             else:
                 # ---原始数据可视化---
+                # first clear old series
+                self.m_env_temp_series.clear()
+                self.m_env_temp_scatter.clear()
+                self.m_kni_temp_series.clear()
+                self.m_kni_temp_scatter.clear()
+                self.m_rpa_series.clear()
+                self.m_rpa_scatter.clear()
+                self.m_stra_series.clear()
+                self.m_stra_scatter.clear()
+                self.m_env_temp_series_2.clear()
+                self.m_env_temp_scatter_2.clear()
+                self.m_kni_temp_series_2.clear()
+                self.m_kni_temp_scatter_2.clear()
+                self.m_rpa_series_2.clear()
+                self.m_rpa_scatter_2.clear()
+                self.m_stra_series_2.clear()
+                self.m_stra_scatter_2.clear()
                 axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
                 if axis == 0:
                     self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
@@ -1136,7 +1784,7 @@ class MainWindow(QMainWindow):
                     msg_box.exec_()
                 else:
                     run_time_data_1 = np.array(fault_time)
-
+                    self.run_time_data_1 = run_time_data_1
                     self.plot_relia_charts(run_time_data_1, self.m_scatter_chart, self.m_scatter_series,
                                            self.m_pdf_chart, self.m_pdf_series_ls, self.m_pdf_series_map,
                                            self.m_cdf_chart, self.m_cdf_series_ls, self.m_cdf_series_map,
@@ -1155,6 +1803,23 @@ class MainWindow(QMainWindow):
                 return
             else:
                 # ---原始数据可视化---
+                # first clear old series
+                self.m_env_temp_series.clear()
+                self.m_env_temp_scatter.clear()
+                self.m_kni_temp_series.clear()
+                self.m_kni_temp_scatter.clear()
+                self.m_rpa_series.clear()
+                self.m_rpa_scatter.clear()
+                self.m_stra_series.clear()
+                self.m_stra_scatter.clear()
+                self.m_env_temp_series_2.clear()
+                self.m_env_temp_scatter_2.clear()
+                self.m_kni_temp_series_2.clear()
+                self.m_kni_temp_scatter_2.clear()
+                self.m_rpa_series_2.clear()
+                self.m_rpa_scatter_2.clear()
+                self.m_stra_series_2.clear()
+                self.m_stra_scatter_2.clear()
                 axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
                 if axis == 0:
                     self.plot_raw_data(self.data_table_of_dev_2['x_table'], self.m_env_temp_series_2,
@@ -1182,6 +1847,7 @@ class MainWindow(QMainWindow):
                     msg_box.exec_()
                 else:
                     run_time_data_2 = np.array(fault_time)
+                    self.run_time_data_2 = run_time_data_2
                     self.plot_relia_charts(run_time_data_2, self.m_scatter_chart, self.m_scatter_series,
                                            self.m_pdf_chart, self.m_pdf_series_ls_2, self.m_pdf_series_map_2,
                                            self.m_cdf_chart, self.m_cdf_series_ls_2, self.m_cdf_series_map_2,
@@ -1202,6 +1868,23 @@ class MainWindow(QMainWindow):
                 return
             else:
                 # ---原始数据可视化---
+                # first clear old series
+                self.m_env_temp_series.clear()
+                self.m_env_temp_scatter.clear()
+                self.m_kni_temp_series.clear()
+                self.m_kni_temp_scatter.clear()
+                self.m_rpa_series.clear()
+                self.m_rpa_scatter.clear()
+                self.m_stra_series.clear()
+                self.m_stra_scatter.clear()
+                self.m_env_temp_series_2.clear()
+                self.m_env_temp_scatter_2.clear()
+                self.m_kni_temp_series_2.clear()
+                self.m_kni_temp_scatter_2.clear()
+                self.m_rpa_series_2.clear()
+                self.m_rpa_scatter_2.clear()
+                self.m_stra_series_2.clear()
+                self.m_stra_scatter_2.clear()
                 axis = self.ui.axisComboBox.currentIndex()  # 0---x axis, 1---y axis, 2---z axis
                 if axis == 0:
                     self.plot_raw_data(self.data_table_of_dev_1['x_table'], self.m_env_temp_series,
@@ -1272,6 +1955,8 @@ class MainWindow(QMainWindow):
                                            self.m_relia_chart, self.m_relia_series_ls_2, self.m_relia_series_map_2,
                                            self.m_fail_chart, self.m_fail_series_ls_2, self.m_fail_series_map_2,
                                            self.ui.dev2ResultWidget)
+                    self.run_time_data_1 = run_time_data_1
+                    self.run_time_data_2 = run_time_data_2
                     # 比较分析
                     curr_time = max(np.max(run_time_data_1), np.max(run_time_data_2))
                     lambda_hat_1 = float(self.ui.dev1ResultWidget.item(Result.lamda_value.value).text())
@@ -1341,14 +2026,24 @@ class MainWindow(QMainWindow):
         :param filename: 文件名
         :return:
         '''
-        item_head = ['尺度参数λ', '形状参数β', 'MTBF']
+        item_head = ['设备名称', '尺度参数λ', '形状参数β', '可靠度', '失效率', 'MTBF']
+        item_enum = [Result.lamda_value.value, Result.beta_value.value, Result.relia_value.value,
+                     Result.fali_value.value, Result.mtbf_value.value]
         wb = Workbook()
         # 添加sheets
         relia_sheet = wb.create_sheet('可靠性分析结果', index=0)
         # 先写入表头
         relia_sheet.append(item_head)
         # 写入结果
-        relia_sheet.append([self.ui.resultWidget.item(2 * i + 1).text() for i in range(0, len(item_head))])
+        dev1_result = []
+        dev2_result = []
+        dev1_result.append(self.ui.devWidget.item(6).text())
+        dev2_result.append(self.ui.devWidget_2.item(6).text())
+        for i in item_enum:
+            dev1_result.append(self.ui.dev1ResultWidget.item(i).text())
+            dev2_result.append(self.ui.dev2ResultWidget.item(i).text())
+        relia_sheet.append(dev1_result)
+        relia_sheet.append(dev2_result)
         # 保存文档
         wb.save(filename)
 
@@ -1359,17 +2054,17 @@ class MainWindow(QMainWindow):
             prefix = '可靠性分析_'
             # 保存可靠性分析图片
             if self.ui.reliaWidget.currentIndex() == 0:
-                self.save_view(self.ui.tempView_1, os.path.join(save_dir, prefix + '环境温度折线图.jpg'))
-                self.save_view(self.ui.tempView_2, os.path.join(save_dir, prefix + '刀头温度折线图.jpg'))
-                self.save_view(self.ui.rpaView, os.path.join(save_dir, prefix + '重复定位精度折线图.jpg'))
-                self.save_view(self.ui.straView, os.path.join(save_dir, prefix + '温差折线图.jpg'))
+                self.save_view(self.ui.tempView_1, os.path.join(save_dir, '环境温度折线图.jpg'))
+                self.save_view(self.ui.tempView_2, os.path.join(save_dir, '刀头温度折线图.jpg'))
+                self.save_view(self.ui.rpaView, os.path.join(save_dir, '重复定位精度折线图.jpg'))
+                self.save_view(self.ui.straView, os.path.join(save_dir, '温差折线图.jpg'))
             elif self.ui.reliaWidget.currentIndex() == 1:
-                self.save_view(self.ui.scatterView, os.path.join(save_dir, prefix + '故障时间间隔散点图.jpg'))
+                self.save_view(self.ui.scatterView, os.path.join(save_dir, '故障时间间隔散点图.jpg'))
             else:
-                self.save_view(self.ui.pdfView, os.path.join(save_dir, prefix + '威布尔分布概率密度图.jpg'))
-                self.save_view(self.ui.cdfView, os.path.join(save_dir, prefix + '威布尔分布累积分布图.jpg'))
-                self.save_view(self.ui.reliaView, os.path.join(save_dir, prefix + '可靠度曲线图.jpg'))
-                self.save_view(self.ui.failView, os.path.join(save_dir, prefix + '失效率曲线图.jpg'))
+                self.save_view(self.ui.pdfView, os.path.join(save_dir, '威布尔分布概率密度图.jpg'))
+                self.save_view(self.ui.cdfView, os.path.join(save_dir, '威布尔分布累积分布图.jpg'))
+                self.save_view(self.ui.reliaView, os.path.join(save_dir, '可靠度曲线图.jpg'))
+                self.save_view(self.ui.failView, os.path.join(save_dir, '失效率曲线图.jpg'))
                 # 将结果写入表格
                 self.write_relia_result(os.path.join(save_dir, '可靠性分析结果.xlsx'))
 
@@ -1572,6 +2267,7 @@ class MainWindow(QMainWindow):
             dev_1 = int(dev_1)
             maintain_time_of_dev_1 = self.read_maintain_data(dev_1)
             if len(maintain_time_of_dev_1) <= 0:
+                self.maintain_time_of_dev_1 = maintain_time_of_dev_1
                 msg_box = QMessageBox(QMessageBox.Information,
                                       '提示',
                                       '无维修数据',
@@ -1595,6 +2291,7 @@ class MainWindow(QMainWindow):
             dev_2 = int(dev_2)
             maintain_time_of_dev_2 = self.read_maintain_data(dev_2)
             if len(maintain_time_of_dev_2) <= 0:
+                self.maintain_time_of_dev_2 = maintain_time_of_dev_2
                 msg_box = QMessageBox(QMessageBox.Information,
                                       '提示',
                                       '无维修数据',
@@ -1656,6 +2353,8 @@ class MainWindow(QMainWindow):
                                           self.m_fail_series_maintain_map,
                                           self.ui.dev1MtResultWidget)
             elif len(maintain_time_of_dev_1) > 0 and len(maintain_time_of_dev_2) > 0:
+                self.maintain_time_of_dev_1 = maintain_time_of_dev_1
+                self.maintain_time_of_dev_2 = maintain_time_of_dev_2
                 self.plot_maintain_charts(maintain_time_of_dev_1, self.m_scatter_chart_maintain,
                                           self.m_scatter_series_maintain,
                                           self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls,
@@ -1747,14 +2446,24 @@ class MainWindow(QMainWindow):
         :param filename: 文件名
         :return:
         '''
-        item_head = ['尺度参数λ', '形状参数β', 'MTTR']
+        item_head = ['设备名称', '尺度参数λ', '形状参数β', '修复率', '失效率', 'MTTR']
+        item_enum = [Result.lamda_value.value, Result.beta_value.value, Result.relia_value.value,
+                     Result.fali_value.value, Result.mtbf_value.value]
         wb = Workbook()
         # 添加sheets
         maintain_sheet = wb.create_sheet('维修性分析结果', index=0)
         # 先写入表头
         maintain_sheet.append(item_head)
         # 写入结果
-        maintain_sheet.append([self.ui.resultWidget_2.item(2 * i + 1).text() for i in range(0, len(item_head))])
+        dev1_result = []
+        dev2_result = []
+        dev1_result.append(self.ui.devWidget.item(6).text())
+        dev2_result.append(self.ui.devWidget_2.item(6).text())
+        for i in item_enum:
+            dev1_result.append(self.ui.dev1MtResultWidget.item(i).text())
+            dev2_result.append(self.ui.dev2MtResultWidget.item(i).text())
+        maintain_sheet.append(dev1_result)
+        maintain_sheet.append(dev2_result)
         # 保存文档
         wb.save(filename)
 
@@ -1765,12 +2474,12 @@ class MainWindow(QMainWindow):
             prefix = '维修性分析_'
             # 保存维修性分析图片
             if self.ui.maintainWidget.currentIndex() == 0:
-                self.save_view(self.ui.scatterView_2, os.path.join(save_dir, prefix + '维修时间散点图.jpg'))
+                self.save_view(self.ui.scatterView_2, os.path.join(save_dir, '维修时间散点图.jpg'))
             else:
-                self.save_view(self.ui.pdfView_2, os.path.join(save_dir, prefix + '威布尔分布概率密度图.jpg'))
-                self.save_view(self.ui.cdfView_2, os.path.join(save_dir, prefix + '威布尔分布累积分布图.jpg'))
-                self.save_view(self.ui.reliaView_2, os.path.join(save_dir, prefix + '维修度曲线图.jpg'))
-                self.save_view(self.ui.failView_2, os.path.join(save_dir, prefix + '失效率曲线图.jpg'))
+                self.save_view(self.ui.pdfView_2, os.path.join(save_dir, '威布尔分布概率密度图.jpg'))
+                self.save_view(self.ui.cdfView_2, os.path.join(save_dir, '威布尔分布累积分布图.jpg'))
+                self.save_view(self.ui.reliaView_2, os.path.join(save_dir, '维修度曲线图.jpg'))
+                self.save_view(self.ui.failView_2, os.path.join(save_dir, '失效率曲线图.jpg'))
                 # 将结果写入表格
                 self.write_maintain_result(os.path.join(save_dir, '维修性分析结果.xlsx'))
             msg_box = QMessageBox(QMessageBox.Information,
@@ -1806,300 +2515,6 @@ class MainWindow(QMainWindow):
                                   QMessageBox.Ok)
             msg_box.exec_()
 
-    def read_fault_data(self):
-        '''
-        读取故障数据
-        :param filename: 文件名
-        :return:
-        '''
-        item_num = 4
-        data_table = dict()
-        # 数据库查询
-        dev_id = self.ui.devWidget.item(2).text()
-        if dev_id.strip(' ') != '':
-            dev_id = int(dev_id)
-            # 整机
-            whole_table = []
-            patts, posis, reasons, roots = [], [], [], []
-            query_sql = 'select pattern, position, reason, root from breakdown ' \
-                        'where dev_id = :dev_id and status = :status'
-            self.query.prepare(query_sql)
-            self.query.bindValue(':dev_id', dev_id)
-            self.query.bindValue(':status', 1)
-            if not self.query.exec_():
-                print(self.query.lastError().text())
-                return data_table
-            else:
-                while self.query.next():
-                    patts.append(self.query.value(0))
-                    posis.append(self.query.value(1))
-                    reasons.append(self.query.value(2))
-                    roots.append(self.query.value(3))
-                whole_table.append(patts);
-                whole_table.append(posis)
-                whole_table.append(reasons);
-                whole_table.append(roots)
-                # 整机
-                subsys_table = []
-                patts, posis, reasons, roots = [], [], [], []
-                query_sql = 'select pattern, position, reason, root from breakdown ' \
-                            'where dev_id = :dev_id and status = :status'
-                self.query.prepare(query_sql)
-                self.query.bindValue(':dev_id', dev_id)
-                self.query.bindValue(':status', 0)
-                if not self.query.exec_():
-                    print(self.query.lastError().text())
-                    return data_table
-                else:
-                    while self.query.next():
-                        patts.append(self.query.value(0))
-                        posis.append(self.query.value(1))
-                        reasons.append(self.query.value(2))
-                        roots.append(self.query.value(3))
-                    subsys_table.append(patts);
-                    subsys_table.append(posis)
-                    subsys_table.append(reasons);
-                    subsys_table.append(roots)
-                data_table['whole'] = whole_table
-                data_table['subsys'] = subsys_table
-        return data_table
-
-    def count_fault_data(self, data_table):
-        # 创建各故障数据项集合
-        patt_set = list(set(data_table[PATT]))
-        posi_set = list(set(data_table[POSI]))
-        reason_set = list(set(data_table[REASON]))
-        root_set = list(set(data_table[ROOT]))
-        fault_set = [patt_set, posi_set, reason_set, root_set]
-        # 保存统计结果
-        patt_prob = [0] * len(patt_set)
-        posi_prob = [0] * len(posi_set)
-        reason_prob = [0] * len(reason_set)
-        root_prob = [0] * len(root_set)
-        # 统计各项频率
-        for rec in data_table[PATT]:
-            for i in range(0, len(patt_set)):
-                if rec == patt_set[i]:
-                    patt_prob[i] += (1 / len(data_table[PATT]))
-        for rec in data_table[POSI]:
-            for i in range(0, len(posi_set)):
-                if rec == posi_set[i]:
-                    posi_prob[i] += (1 / len(data_table[POSI]))
-        for rec in data_table[REASON]:
-            for i in range(0, len(reason_set)):
-                if rec == reason_set[i]:
-                    reason_prob[i] += (1 / len(data_table[REASON]))
-        for rec in data_table[ROOT]:
-            for i in range(0, len(root_set)):
-                if rec == root_set[i]:
-                    root_prob[i] += (1 / len(data_table[ROOT]))
-        prob_table = [[]] * 4
-        prob_table[PATT] = patt_prob
-        prob_table[POSI] = posi_prob
-        prob_table[REASON] = reason_prob
-        prob_table[ROOT] = root_prob
-        return fault_set, prob_table
-
-    def plot_fault_bar(self, fault_data):
-        '''
-        绘制故障统计图
-        :param fault_data:
-        :return:
-        '''
-        ## 整机
-        whole_data = fault_data['whole']
-        fault_set, prob_table = self.count_fault_data(whole_data)
-        # --故障模式--
-        self.m_patt_series.clear()
-        patt_set = fault_set[PATT]
-        patt_prob = prob_table[PATT]
-        # 定义柱状条
-        bar_set = QBarSet('故障模式')
-        # 柱状条赋值
-        for prob in patt_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(patt_set)
-        self.m_patt_chart.axisY().setRange(0, max(patt_prob))
-        # 设置柱状集
-        self.m_patt_series.append(bar_set)
-        self.m_patt_chart.setAxisX(axisX)
-        self.m_patt_chart.addSeries(self.m_patt_series)
-        self.m_patt_chart.legend().setVisible(True)
-        self.m_patt_chart.legend().setAlignment(Qt.AlignBottom)
-        # --故障部位--
-        self.m_posi_series.clear()
-        posi_set = fault_set[POSI]
-        posi_prob = prob_table[POSI]
-        # 定义柱状条
-        bar_set = QBarSet('故障部位')
-        # 柱状条赋值
-        for prob in posi_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(posi_set)
-        self.m_posi_chart.axisY().setRange(0, max(posi_prob))
-        # 设置柱状集
-        self.m_posi_series.append(bar_set)
-        self.m_posi_chart.setAxisX(axisX)
-        self.m_posi_chart.addSeries(self.m_posi_series)
-        self.m_posi_chart.legend().setVisible(True)
-        self.m_posi_chart.legend().setAlignment(Qt.AlignBottom)
-        # --故障原因-
-        self.m_reason_series.clear()
-        reason_set = fault_set[REASON]
-        reason_prob = prob_table[REASON]
-        # 定义柱状条
-        bar_set = QBarSet('故障原因')
-        # 柱状条赋值
-        for prob in reason_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(reason_set)
-        self.m_reason_chart.axisY().setRange(0, max(reason_prob))
-        # 设置柱状集
-        self.m_reason_series.append(bar_set)
-        self.m_reason_chart.setAxisX(axisX)
-        self.m_reason_chart.addSeries(self.m_reason_series)
-        self.m_reason_chart.legend().setVisible(True)
-        self.m_reason_chart.legend().setAlignment(Qt.AlignBottom)
-        # --故障溯源--
-        self.m_root_series.clear()
-        root_set = fault_set[ROOT]
-        root_prob = prob_table[ROOT]
-        # 定义柱状条
-        bar_set = QBarSet('故障溯源')
-        # 柱状条赋值
-        for prob in root_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(root_set)
-        self.m_root_chart.axisY().setRange(0, max(root_prob))
-        # 设置柱状集
-        self.m_root_series.append(bar_set)
-        self.m_root_chart.setAxisX(axisX)
-        self.m_root_chart.addSeries(self.m_root_series)
-        self.m_root_chart.legend().setVisible(True)
-        self.m_root_chart.legend().setAlignment(Qt.AlignBottom)
-        # 填充表格
-        self.ui.resultWidget_3.item(Fault.pattern_value.value). \
-            setText(patt_set[patt_prob.index(max(patt_prob))])
-        self.ui.resultWidget_3.item(Fault.position_value.value). \
-            setText(posi_set[posi_prob.index(max(posi_prob))])
-        self.ui.resultWidget_3.item(Fault.reason_value.value). \
-            setText(reason_set[reason_prob.index(max(reason_prob))])
-        self.ui.resultWidget_3.item(Fault.root_value.value). \
-            setText(root_set[root_prob.index(max(root_prob))])
-        ##--子系统--
-        subsys_data = fault_data['subsys']
-        # 统计各故障频率
-        fault_set, prob_table = self.count_fault_data(subsys_data)
-        # --故障模式--
-        self.m_patt_series_2.clear()
-        patt_set = fault_set[PATT]
-        patt_prob = prob_table[PATT]
-        # 定义柱状条
-        bar_set = QBarSet('故障模式')
-        # 柱状条赋值
-        for prob in patt_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(patt_set)
-        self.m_patt_chart_2.axisY().setRange(0, max(patt_prob))
-        # 设置柱状集
-        self.m_patt_series_2.append(bar_set)
-        self.m_patt_chart_2.setAxisX(axisX)
-        self.m_patt_chart_2.addSeries(self.m_patt_series_2)
-        self.m_patt_chart_2.legend().setVisible(True)
-        self.m_patt_chart_2.legend().setAlignment(Qt.AlignBottom)
-        # --故障部位--
-        self.m_posi_series_2.clear()
-        posi_set = fault_set[POSI]
-        posi_prob = prob_table[POSI]
-        # 定义柱状条
-        bar_set = QBarSet('故障部位')
-        # 柱状条赋值
-        for prob in posi_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(posi_set)
-        self.m_posi_chart_2.axisY().setRange(0, max(posi_prob))
-        # 设置柱状集
-        self.m_posi_series_2.append(bar_set)
-        self.m_posi_chart_2.setAxisX(axisX)
-        self.m_posi_chart_2.addSeries(self.m_posi_series_2)
-        self.m_posi_chart_2.legend().setVisible(True)
-        self.m_posi_chart_2.legend().setAlignment(Qt.AlignBottom)
-        # --故障原因-
-        self.m_reason_series_2.clear()
-        reason_set = fault_set[REASON]
-        reason_prob = prob_table[REASON]
-        # 定义柱状条
-        bar_set = QBarSet('故障原因')
-        # 柱状条赋值
-        for prob in reason_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(reason_set)
-        self.m_reason_chart_2.axisY().setRange(0, max(reason_prob))
-        # 设置柱状集
-        self.m_reason_series_2.append(bar_set)
-        self.m_reason_chart_2.setAxisX(axisX)
-        self.m_reason_chart_2.addSeries(self.m_reason_series_2)
-        self.m_reason_chart_2.legend().setVisible(True)
-        self.m_reason_chart_2.legend().setAlignment(Qt.AlignBottom)
-        # --故障溯源--
-        self.m_root_series_2.clear()
-        root_set = fault_set[ROOT]
-        root_prob = prob_table[ROOT]
-        # 定义柱状条
-        bar_set = QBarSet('故障溯源')
-        # 柱状条赋值
-        for prob in root_prob:
-            bar_set.append(prob)
-        # 定义横坐标轴
-        axisX = QBarCategoryAxis()
-        axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
-        axisX.setLabelsFont(QFont('Times New Roman', 12))  # 设置横坐标刻度的字体类型和大小
-        axisX.append(root_set)
-        self.m_root_chart_2.axisY().setRange(0, max(root_prob))
-        # 设置柱状集
-        self.m_root_series_2.append(bar_set)
-        self.m_root_chart_2.setAxisX(axisX)
-        self.m_root_chart_2.addSeries(self.m_root_series_2)
-        self.m_root_chart_2.legend().setVisible(True)
-        self.m_root_chart_2.legend().setAlignment(Qt.AlignBottom)
-        # 填充表格
-        self.ui.resultWidget_4.item(Fault.pattern_value.value). \
-            setText(patt_set[patt_prob.index(max(patt_prob))])
-        self.ui.resultWidget_4.item(Fault.position_value.value). \
-            setText(posi_set[posi_prob.index(max(posi_prob))])
-        self.ui.resultWidget_4.item(Fault.reason_value.value). \
-            setText(reason_set[reason_prob.index(max(reason_prob))])
-        self.ui.resultWidget_4.item(Fault.root_value.value). \
-            setText(root_set[root_prob.index(max(root_prob))])
-
     @pyqtSlot()
     def on_manaMtRecButton_clicked(self):
         mt_widget = MaintainListDialog()
@@ -2108,17 +2523,376 @@ class MainWindow(QMainWindow):
         mt_widget.destroy()
 
     # 故障分析页面响应事件
+    def read_fault_data(self, dev_id):
+        '''
+        读取故障数据
+        :param filename: 文件名
+        :return:
+        '''
+        item_num = 4
+        data_table = dict()
+        # 数据库查询
+        # 整机
+        whole_table = []
+        patts, posis, reasons, roots, statuses = [], [], [], [], []
+        query_sql = 'select pattern, position, reason, root, status from breakdown ' \
+                    'where dev_id = :dev_id and status = :status'
+        self.query.prepare(query_sql)
+        self.query.bindValue(':dev_id', dev_id)
+        self.query.bindValue(':status', 1)
+        if not self.query.exec_():
+            print(self.query.lastError().text())
+            return data_table
+        else:
+            while self.query.next():
+                patts.append(str(self.query.value(0)))
+                posis.append(str(self.query.value(1)))
+                reasons.append(str(self.query.value(2)))
+                roots.append(str(self.query.value(3)))
+                statuses.append(int(self.query.value(4)))
+            whole_table.append(patts)
+            whole_table.append(posis)
+            whole_table.append(reasons)
+            whole_table.append(roots)
+            whole_table.append(statuses)
+            # 整机
+            subsys_table = []
+            patts, posis, reasons, roots, statuses = [], [], [], [], []
+            query_sql = 'select pattern, position, reason, root, status from breakdown ' \
+                        'where dev_id = :dev_id and status = :status'
+            self.query.prepare(query_sql)
+            self.query.bindValue(':dev_id', dev_id)
+            self.query.bindValue(':status', 0)
+            if not self.query.exec_():
+                print(self.query.lastError().text())
+                return data_table
+            else:
+                while self.query.next():
+                    patts.append(str(self.query.value(0)))
+                    posis.append(str(self.query.value(1)))
+                    reasons.append(str(self.query.value(2)))
+                    roots.append(str(self.query.value(3)))
+                    statuses.append(int(self.query.value(4)))
+                subsys_table.append(patts)
+                subsys_table.append(posis)
+                subsys_table.append(reasons)
+                subsys_table.append(roots)
+                subsys_table.append(statuses)
+            data_table['whole'] = whole_table
+            data_table['subsys'] = subsys_table
+        return data_table
+
+    def count_fault_data(self, data_table):
+        # 创建各故障数据项集合
+        patt_set = dict()
+        for rec in data_table[PATT]:
+            if rec in patt_set:
+                patt_set[rec] += 1 / len(data_table[PATT])
+            else:
+                patt_set[rec] = 0
+        patt_set = dict(sorted(patt_set.items(), key=operator.itemgetter(0)))
+        posi_set = dict()
+        for rec in data_table[POSI]:
+            if rec in posi_set:
+                posi_set[rec] += 1 / len(data_table[POSI])
+            else:
+                posi_set[rec] = 0
+        posi_set = dict(sorted(posi_set.items(), key=operator.itemgetter(0)))
+        reason_set = dict()
+        for rec in data_table[REASON]:
+            if rec in reason_set:
+                reason_set[rec] += 1 / len(data_table[REASON])
+            else:
+                reason_set[rec] = 0
+        reason_set = dict(sorted(reason_set.items(), key=operator.itemgetter(0)))
+        root_set = dict()
+        for rec in data_table[ROOT]:
+            if rec in root_set:
+                root_set[rec] += 1 / len(data_table[ROOT])
+            else:
+                root_set[rec] = 0
+        root_set = dict(sorted(root_set.items(), key=operator.itemgetter(0)))
+        fault_set = [patt_set, posi_set, reason_set, root_set]
+        return fault_set
+
+    def plot_fault_bar(self, fault_datas, dev_name='设备'):
+        '''
+        绘制故障统计图
+        :param fault_data:
+        :return:
+        '''
+        # 记录统计结果的字符串
+        whole_patt = ''
+        whole_posi = ''
+        whole_reason = ''
+        whole_root = ''
+        subsys_patt = ''
+        subsys_posi = ''
+        subsys_reason = ''
+        subsys_root = ''
+        # 清除旧记录
+        self.m_patt_series.clear()
+        self.m_posi_series.clear()
+        self.m_reason_series.clear()
+        self.m_root_series.clear()
+        self.m_patt_series_2.clear()
+        self.m_posi_series_2.clear()
+        self.m_reason_series_2.clear()
+        self.m_root_series_2.clear()
+        self.m_patt_chart.removeSeries(self.m_patt_series)
+        self.m_posi_chart.removeSeries(self.m_posi_series)
+        self.m_reason_chart.removeSeries(self.m_reason_series)
+        self.m_root_chart.removeSeries(self.m_root_series)
+        self.m_patt_chart_2.removeSeries(self.m_patt_series_2)
+        self.m_posi_chart_2.removeSeries(self.m_posi_series_2)
+        self.m_reason_chart_2.removeSeries(self.m_reason_series_2)
+        self.m_root_chart_2.removeSeries(self.m_root_series_2)
+        ## 整机
+        for i, fault_data in enumerate(fault_datas):
+            whole_data = fault_data['whole']
+            fault_set = self.count_fault_data(whole_data)
+            # --故障模式--
+            patt_set = fault_set[PATT]
+            # 定义柱状条
+            # 柱状条赋值
+            patt_items = []
+            patt_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in patt_set.items():
+                patt_items.append(key)
+                patt_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(patt_items)
+                # 设置柱状集
+                self.m_patt_chart.setAxisX(axisX)
+            self.m_patt_chart.axisY().setRange(0, max(max(patt_probs), self.m_patt_chart.axisY().max()))
+            self.m_patt_series.append(bar_set)
+            self.m_patt_chart.legend().setVisible(True)
+            self.m_patt_chart.legend().setAlignment(Qt.AlignBottom)
+            # --故障部位--
+            posi_set = fault_set[POSI]
+            # 定义柱状条
+            # 柱状条赋值
+            posi_items = []
+            posi_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in posi_set.items():
+                posi_items.append(key)
+                posi_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(posi_items)
+                # 设置柱状集
+                self.m_posi_chart.setAxisX(axisX)
+            self.m_posi_chart.axisY().setRange(0, max(max(posi_probs), self.m_posi_chart.axisY().max()))
+            self.m_posi_series.append(bar_set)
+            self.m_posi_chart.legend().setVisible(True)
+            self.m_posi_chart.legend().setAlignment(Qt.AlignBottom)
+            # --故障原因-
+            reason_set = fault_set[REASON]
+            # 定义柱状条
+            # 柱状条赋值
+            reason_items = []
+            reason_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in reason_set.items():
+                reason_items.append(key)
+                reason_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(reason_items)
+                # 设置柱状集
+                self.m_reason_chart.setAxisX(axisX)
+            self.m_reason_chart.axisY().setRange(0, max(max(reason_probs), self.m_reason_chart.axisY().max()))
+            self.m_reason_series.append(bar_set)
+            self.m_reason_chart.legend().setVisible(True)
+            self.m_reason_chart.legend().setAlignment(Qt.AlignBottom)
+            # --故障溯源--
+            root_set = fault_set[ROOT]
+            # 定义柱状条
+            # 柱状条赋值
+            root_items = []
+            root_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in root_set.items():
+                root_items.append(key)
+                root_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(root_items)
+                # 设置柱状集
+                self.m_root_chart.setAxisX(axisX)
+            self.m_root_chart.axisY().setRange(0, max(max(root_probs), self.m_root_chart.axisY().max()))
+            self.m_root_series.append(bar_set)
+            self.m_root_chart.legend().setVisible(True)
+            self.m_root_chart.legend().setAlignment(Qt.AlignBottom)
+            # 保存结果到字符串
+            whole_patt += dev_name + str(i + 1) + ': ' + patt_items[patt_probs.index(max(patt_probs))] + ' '
+            whole_posi += dev_name + str(i + 1) + ': ' + posi_items[posi_probs.index(max(posi_probs))] + ' '
+            whole_reason += dev_name + str(i + 1) + ': ' + reason_items[reason_probs.index(max(reason_probs))] + ' '
+            whole_root += dev_name + str(i + 1) + ': ' + root_items[root_probs.index(max(root_probs))] + ' '
+            ##--子系统--
+            subsys_data = fault_data['subsys']
+            # 统计各故障频率
+            fault_set = self.count_fault_data(subsys_data)
+            # --故障模式--
+            patt_set = fault_set[PATT]
+            # 定义柱状条
+            # 柱状条赋值
+            patt_items = []
+            patt_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in patt_set.items():
+                patt_items.append(key)
+                patt_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(patt_set)
+                # 设置柱状集
+                self.m_patt_chart_2.setAxisX(axisX)
+            self.m_patt_chart_2.axisY().setRange(0, max(max(patt_probs), self.m_patt_chart_2.axisY().max()))
+            self.m_patt_series_2.append(bar_set)
+            self.m_patt_chart_2.legend().setVisible(True)
+            self.m_patt_chart_2.legend().setAlignment(Qt.AlignBottom)
+            # --故障部位--
+            posi_set = fault_set[POSI]
+            # 定义柱状条
+            # 柱状条赋值
+            posi_items = []
+            posi_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in posi_set.items():
+                posi_items.append(key)
+                posi_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(posi_set)
+                # 设置柱状集
+                self.m_posi_chart_2.setAxisX(axisX)
+            self.m_posi_chart_2.axisY().setRange(0, max(max(posi_probs), self.m_posi_chart_2.axisY().max()))
+            self.m_posi_series_2.append(bar_set)
+            self.m_posi_chart_2.legend().setVisible(True)
+            self.m_posi_chart_2.legend().setAlignment(Qt.AlignBottom)
+            # --故障原因-
+            reason_set = fault_set[REASON]
+            # 定义柱状条
+            # 柱状条赋值
+            reason_items = []
+            reason_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in reason_set.items():
+                reason_items.append(key)
+                reason_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(reason_set)
+                # 设置柱状集
+                self.m_reason_chart_2.setAxisX(axisX)
+            self.m_reason_chart_2.axisY().setRange(0, max(max(reason_probs), self.m_reason_chart_2.axisY().max()))
+            self.m_reason_series_2.append(bar_set)
+            self.m_reason_chart_2.legend().setVisible(True)
+            self.m_reason_chart_2.legend().setAlignment(Qt.AlignBottom)
+            # --故障溯源--
+            root_set = fault_set[ROOT]
+            # 定义柱状条
+            # 柱状条赋值
+            root_items = []
+            root_probs = []
+            bar_set = QBarSet(dev_name + str(i + 1))
+            for key, value in root_set.items():
+                root_items.append(key)
+                root_probs.append(value)
+                bar_set.append(value)
+            # 定义横坐标轴
+            if i == 0:
+                axisX = QBarCategoryAxis()
+                axisX.setTitleFont(QFont('Times New Roman', 10))  # 设置横坐标标题字体的类型和大小
+                axisX.setLabelsFont(QFont('Times New Roman', 10))  # 设置横坐标刻度的字体类型和大小
+                axisX.append(root_set)
+                # 设置柱状集
+                self.m_root_chart_2.setAxisX(axisX)
+            self.m_root_chart_2.axisY().setRange(0, max(max(root_probs), self.m_root_chart_2.axisY().max()))
+            self.m_root_series_2.append(bar_set)
+            self.m_root_chart_2.legend().setVisible(True)
+            self.m_root_chart_2.legend().setAlignment(Qt.AlignBottom)
+            # 保存结果到字符串
+            subsys_patt += dev_name + str(i + 1) + ': ' + patt_items[patt_probs.index(max(patt_probs))] + ' '
+            subsys_posi += dev_name + str(i + 1) + ': ' + posi_items[posi_probs.index(max(posi_probs))] + ' '
+            subsys_reason += dev_name + str(i + 1) + ': ' + reason_items[reason_probs.index(max(reason_probs))] + ' '
+            subsys_root += dev_name + str(i + 1) + ': ' + root_items[root_probs.index(max(root_probs))] + ' '
+        self.m_patt_chart.addSeries(self.m_patt_series)
+        self.m_posi_chart.addSeries(self.m_posi_series)
+        self.m_reason_chart.addSeries(self.m_reason_series)
+        self.m_root_chart.addSeries(self.m_root_series)
+        self.m_patt_chart_2.addSeries(self.m_patt_series_2)
+        self.m_posi_chart_2.addSeries(self.m_posi_series_2)
+        self.m_reason_chart_2.addSeries(self.m_reason_series_2)
+        self.m_root_chart_2.addSeries(self.m_root_series_2)
+        # 填充表格
+        self.ui.resultWidget_3.item(Fault.pattern_value.value).setText(whole_patt)
+        self.ui.resultWidget_3.item(Fault.position_value.value).setText(whole_posi)
+        self.ui.resultWidget_3.item(Fault.reason_value.value).setText(whole_reason)
+        self.ui.resultWidget_3.item(Fault.root_value.value).setText(whole_root)
+        # 填充表格
+        self.ui.resultWidget_4.item(Fault.pattern_value.value).setText(subsys_patt)
+        self.ui.resultWidget_4.item(Fault.position_value.value).setText(subsys_posi)
+        self.ui.resultWidget_4.item(Fault.reason_value.value).setText(subsys_reason)
+        self.ui.resultWidget_4.item(Fault.root_value.value).setText(subsys_root)
+
     @pyqtSlot()
     def on_loadButton_3_clicked(self):
-        fault_data = self.read_fault_data()
-        if not fault_data:
-            msg_box = QMessageBox(QMessageBox.Warning,
-                                  '警告',
-                                  '请导入正确格式！',
-                                  QMessageBox.Ok)
-            msg_box.exec_()
-            return
-        self.plot_fault_bar(fault_data)
+        dev_1 = self.ui.devWidget.item(2).text()
+        dev_2 = self.ui.devWidget_2.item(2).text()
+        if dev_1.strip(' ') != '' and dev_2.strip(' ') == '':  # 只有设备1的数据
+            dev_1 = int(dev_1)
+            fault_data = self.read_fault_data(dev_1)
+            self.plot_fault_bar([fault_data])
+        elif dev_1.strip(' ') == '' and dev_2.strip(' ') != '':  # 只有设备2的数据
+            dev_2 = int(dev_2)
+            fault_data = self.read_fault_data(dev_2)
+            self.plot_fault_bar([fault_data])
+        elif dev_1.strip(' ') != '' and dev_2.strip(' ') != '':
+            dev_1 = int(dev_1)
+            dev_2 = int(dev_2)
+            fault_data_1 = self.read_fault_data(dev_1)
+            fault_data_2 = self.read_fault_data(dev_2)
+            self.plot_fault_bar([fault_data_1, fault_data_2])
+        # if not fault_data:
+        #     msg_box = QMessageBox(QMessageBox.Warning,
+        #                           '警告',
+        #                           '请导入正确格式！',
+        #                           QMessageBox.Ok)
+        #     msg_box.exec_()
+        #     return
 
     @pyqtSlot()
     def on_wholeButton_clicked(self):
@@ -2163,16 +2937,16 @@ class MainWindow(QMainWindow):
             subsys = '子系统_'
             # 保存整机分析图片
             if self.ui.faultWidget.currentIndex() == 0:
-                self.save_view(self.ui.pattView, os.path.join(save_dir, prefix + whole + '故障模式统计.jpg'))
-                self.save_view(self.ui.posiView, os.path.join(save_dir, prefix + whole + '故障部位统计.jpg'))
-                self.save_view(self.ui.reasonView, os.path.join(save_dir, prefix + whole + '故障原因统计.jpg'))
-                self.save_view(self.ui.rootView, os.path.join(save_dir, prefix + whole + '故障溯源统计.jpg'))
+                self.save_view(self.ui.pattView, os.path.join(save_dir, '故障模式统计.jpg'))
+                self.save_view(self.ui.posiView, os.path.join(save_dir, '故障部位统计.jpg'))
+                self.save_view(self.ui.reasonView, os.path.join(save_dir, '故障原因统计.jpg'))
+                self.save_view(self.ui.rootView, os.path.join(save_dir, '故障溯源统计.jpg'))
             else:
                 # 保存子系统分析图片
-                self.save_view(self.ui.pattView_2, os.path.join(save_dir, prefix + subsys + '故障模式统计.jpg'))
-                self.save_view(self.ui.posiView_2, os.path.join(save_dir, prefix + subsys + '故障部位统计.jpg'))
-                self.save_view(self.ui.reasonView_2, os.path.join(save_dir, prefix + subsys + '故障原因统计.jpg'))
-                self.save_view(self.ui.rootView_2, os.path.join(save_dir, prefix + subsys + '故障溯源统计.jpg'))
+                self.save_view(self.ui.pattView_2, os.path.join(save_dir, '故障模式统计.jpg'))
+                self.save_view(self.ui.posiView_2, os.path.join(save_dir, '故障部位统计.jpg'))
+                self.save_view(self.ui.reasonView_2, os.path.join(save_dir, '故障原因统计.jpg'))
+                self.save_view(self.ui.rootView_2, os.path.join(save_dir, '故障溯源统计.jpg'))
             # 将结果写入表格
             self.write_fault_result(os.path.join(save_dir, '故障分析结果.xls'))
             msg_box = QMessageBox(QMessageBox.Information,
@@ -2221,47 +2995,11 @@ class MainWindow(QMainWindow):
             msg_box.exec_()
 
     @pyqtSlot()
-    def on_addDataButton_3_clicked(self):
-        dialog = AddDataDialog_3()
-        dialog.show()
-        if dialog.exec_():
-            pattern = dialog.get_pattern()
-            position = dialog.get_position()
-            reason = dialog.get_reason()
-            root = float(dialog.get_root())
-            status = dialog.get_status()
-
-            dev_id = self.ui.devWidget.item(2).text()
-            if dev_id.strip(' ') != '':
-                dev_id = int(dev_id)
-                insert_sql = 'insert into breakdown (pattern, position, reason, root, status, dev_id) values ' \
-                             '(:pattern, :position, :reason, :root, :status, :dev_id)'
-                self.query.prepare(insert_sql)
-                self.query.bindValue(':pattern', pattern)
-                self.query.bindValue(':position', position)
-                self.query.bindValue(':reason', reason)
-                self.query.bindValue(':root', root)
-                self.query.bindValue(':status', status)
-                self.query.bindValue(':dev_id', dev_id)
-                if not self.query.exec_():
-                    msg_box = QMessageBox(QMessageBox.Warning,
-                                          '警告',
-                                          '添加失败！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-                else:
-                    msg_box = QMessageBox(QMessageBox.Information,
-                                          '提示',
-                                          '添加成功！',
-                                          QMessageBox.Ok)
-                    msg_box.exec_()
-            else:
-                msg_box = QMessageBox(QMessageBox.Information,
-                                      '提示',
-                                      '请选择设备！',
-                                      QMessageBox.Ok)
-                msg_box.exec_()
-        dialog.destroy()
+    def on_manaFtRecButton_clicked(self):
+        mt_widget = FaultListDialog()
+        mt_widget.show()
+        mt_widget.exec_()
+        mt_widget.destroy()
 
     @pyqtSlot()
     def on_nextResultButton_clicked(self):
@@ -2344,6 +3082,93 @@ class MainWindow(QMainWindow):
                              self.m_relia_series_ls_2,
                              self.m_relia_series_map_2, self.m_fail_chart, self.m_fail_series_ls_2,
                              self.m_fail_series_map_2, self.ui.dev2ResultWidget)
+        else:
+            pass
+
+    def on_comboBox_2_currentIndexChanged(self):
+        def check_not_nan(lambda_hat, beta_hat):
+            flag = False
+            if lambda_hat.strip(' ') != '' and beta_hat.strip(' ') != '':
+                flag = True
+            return flag
+
+        def switch_algorithm(lambda_hat, beta_hat, lambda_map, beta_map, method, m_pdf_chart, m_pdf_series_ls,
+                             m_pdf_series_map, m_cdf_chart, m_cdf_series_ls, m_cdf_series_map, m_relia_chart,
+                             m_relia_series_ls, m_relia_series_map, m_fail_chart, m_fail_series_ls, m_fail_series_map,
+                             resultWidget):
+            if method == 0:
+                m_pdf_chart.addSeries(m_pdf_series_ls)
+                m_cdf_chart.addSeries(m_cdf_series_ls)
+                m_relia_chart.addSeries(m_relia_series_ls)
+                m_fail_chart.addSeries(m_fail_series_ls)
+
+                m_pdf_chart.removeSeries(m_pdf_series_map)
+                m_cdf_chart.removeSeries(m_cdf_series_map)
+                m_relia_chart.removeSeries(m_relia_series_map)
+                m_fail_chart.removeSeries(m_fail_series_map)
+
+                # 填充表格
+                resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_hat)
+                resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_hat)
+                resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_hat, beta_hat))
+            else:
+                m_pdf_chart.addSeries(m_pdf_series_map)
+                m_cdf_chart.addSeries(m_cdf_series_map)
+                m_relia_chart.addSeries(m_relia_series_map)
+                m_fail_chart.addSeries(m_fail_series_map)
+
+                m_pdf_chart.removeSeries(m_pdf_series_ls)
+                m_cdf_chart.removeSeries(m_cdf_series_ls)
+                m_relia_chart.removeSeries(m_relia_series_ls)
+                m_fail_chart.removeSeries(m_fail_series_ls)
+                # 填充表格
+                resultWidget.item(Result.lamda_value.value).setText('%.4f' % lambda_map)
+                resultWidget.item(Result.beta_value.value).setText('%.4f' % beta_map)
+                resultWidget.item(Result.mtbf_value.value).setText('%.4f' % rf.mtbf(lambda_map, beta_map))
+
+        method = self.ui.comboBox_2.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
+        lambda_hat_mt_1, beta_hat_mt_1 = self.ui.dev1MtResultWidget.item(
+            Result.lamda_value.value).text(), self.ui.dev1MtResultWidget.item(Result.beta_value.value).text()
+        lambda_hat_mt_2, beta_hat_mt_2 = self.ui.dev2MtResultWidget.item(
+            Result.lamda_value.value).text(), self.ui.dev2MtResultWidget.item(Result.beta_value.value).text()
+
+        if check_not_nan(lambda_hat_mt_1, beta_hat_mt_1) and (not check_not_nan(lambda_hat_mt_2, beta_hat_mt_2)):
+            switch_algorithm(self.lambda_hat_mt_1, self.beta_hat_mt_1, self.lambda_map_mt_1, self.beta_map_mt_1, method,
+                             self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls, self.m_pdf_series_maintain_map,
+                             self.m_cdf_chart_maintain,
+                             self.m_cdf_series_maintain_ls, self.m_cdf_series_maintain_map, self.m_relia_chart_maintain,
+                             self.m_relia_series_maintain_ls,
+                             self.m_relia_series_maintain_map, self.m_fail_chart_maintain,
+                             self.m_fail_series_maintain_ls,
+                             self.m_fail_series_maintain_map, self.ui.dev1MtResultWidget)
+        elif (not check_not_nan(lambda_hat_mt_1, beta_hat_mt_1)) and check_not_nan(lambda_hat_mt_2, beta_hat_mt_2):
+            switch_algorithm(self.lambda_hat_mt_2, self.beta_hat_mt_2, self.lambda_map_mt_2, self.beta_map_mt_2, method,
+                             self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls_2,
+                             self.m_pdf_series_maintain_map_2, self.m_cdf_chart_maintain,
+                             self.m_cdf_series_maintain_ls_2, self.m_cdf_series_maintain_map_2,
+                             self.m_relia_chart_maintain,
+                             self.m_relia_series_maintain_ls_2,
+                             self.m_relia_series_maintain_map_2, self.m_fail_chart_maintain,
+                             self.m_fail_series_maintain_ls_2,
+                             self.m_fail_series_maintain_map_2, self.ui.dev2MtResultWidget)
+        elif check_not_nan(lambda_hat_mt_1, beta_hat_mt_1) and check_not_nan(lambda_hat_mt_2, beta_hat_mt_2):
+            switch_algorithm(self.lambda_hat_mt_1, self.beta_hat_mt_1, self.lambda_map_mt_1, self.beta_map_mt_1, method,
+                             self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls, self.m_pdf_series_maintain_map,
+                             self.m_cdf_chart_maintain,
+                             self.m_cdf_series_maintain_ls, self.m_cdf_series_maintain_map, self.m_relia_chart_maintain,
+                             self.m_relia_series_maintain_ls,
+                             self.m_relia_series_maintain_map, self.m_fail_chart_maintain,
+                             self.m_fail_series_maintain_ls,
+                             self.m_fail_series_maintain_map, self.ui.dev1MtResultWidget)
+            switch_algorithm(self.lambda_hat_mt_2, self.beta_hat_mt_2, self.lambda_map_mt_2, self.beta_map_mt_2, method,
+                             self.m_pdf_chart_maintain, self.m_pdf_series_maintain_ls_2,
+                             self.m_pdf_series_maintain_map_2, self.m_cdf_chart_maintain,
+                             self.m_cdf_series_maintain_ls_2, self.m_cdf_series_maintain_map_2,
+                             self.m_relia_chart_maintain,
+                             self.m_relia_series_maintain_ls_2,
+                             self.m_relia_series_maintain_map_2, self.m_fail_chart_maintain,
+                             self.m_fail_series_maintain_ls_2,
+                             self.m_fail_series_maintain_map_2, self.ui.dev2MtResultWidget)
         else:
             pass
 
@@ -2504,38 +3329,6 @@ class MainWindow(QMainWindow):
                 self.ui.devWidget_2.item(4).setText('')
                 self.ui.devWidget_2.item(6).setText('')
 
-    def on_comboBox_2_currentIndexChanged(self):
-        method = self.ui.comboBox_2.currentIndex()  # 获取算法选择索引,0---最小二乘法, 1---贝叶斯估计法
-        if self.lambda_hat >= 0 and self.beta_hat >= 0:
-            if method == 0:
-                self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_ls)
-                self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_ls)
-                self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_ls)
-                self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_ls)
-                self.m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_map)
-                self.m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_map)
-                self.m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_map)
-                self.m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_map)
-                # 填充表格
-                self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % self.lambda_hat_2)
-                self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % self.beta_hat_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText(
-                    '%.4f' % rf.mtbf(self.lambda_hat_2, self.beta_hat_2))
-            else:
-                self.m_pdf_chart_maintain.addSeries(self.m_pdf_series_maintain_map)
-                self.m_cdf_chart_maintain.addSeries(self.m_cdf_series_maintain_map)
-                self.m_relia_chart_maintain.addSeries(self.m_relia_series_maintain_map)
-                self.m_fail_chart_maintain.addSeries(self.m_fail_series_maintain_map)
-                self.m_pdf_chart_maintain.removeSeries(self.m_pdf_series_maintain_ls)
-                self.m_cdf_chart_maintain.removeSeries(self.m_cdf_series_maintain_ls)
-                self.m_relia_chart_maintain.removeSeries(self.m_relia_series_maintain_ls)
-                self.m_fail_chart_maintain.removeSeries(self.m_fail_series_maintain_ls)
-                # 填充表格
-                self.ui.resultWidget_2.item(Result.lamda_value.value).setText('%.4f' % self.lambda_map_2)
-                self.ui.resultWidget_2.item(Result.beta_value.value).setText('%.4f' % self.beta_map_2)
-                self.ui.resultWidget_2.item(Result.mtbf_value.value).setText(
-                    '%.4f' % rf.mtbf(self.lambda_map_2, self.beta_map_2))
-
     def on_m_pdf_series_hovered(self, point, state):
         sender = self.sender()
         if sender == self.m_pdf_series_ls or sender == self.m_pdf_series_map:
@@ -2680,7 +3473,7 @@ class MainWindow(QMainWindow):
 
     def on_m_fali_series_maintain_hovered(self, point, state):
         sender = self.sender()
-        if sender == self.m_fali_series_maintain_ls or sender == self.m_fali_series_maintain_map:
+        if sender == self.m_fail_series_maintain_ls or sender == self.m_fail_series_maintain_map:
             resultWidget = self.ui.dev1MtResultWidget
         else:
             resultWidget = self.ui.dev2MtResultWidget
@@ -2697,6 +3490,7 @@ class MainWindow(QMainWindow):
             resultWidget.item(Result.cdf_value.value).setText('%f' % cdf)
             resultWidget.item(Result.relia_value.value).setText('%f' % relia)
             resultWidget.item(Result.fali_value.value).setText('%f' % fali)
+
 
 if __name__ == '__main__':
     import sys
