@@ -59,7 +59,6 @@ def delay(msec):
     while QTime.currentTime() < dieTime:
         QCoreApplication.processEvents(QEventLoop.AllEvents, 100)
 
-
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
